@@ -1,8 +1,7 @@
 import argparse
 from dataclasses import dataclass
-from itertools import product
 from pathlib import Path
-from typing import Any, Callable, Generator, Optional, List, Union, Tuple
+from typing import Callable, Optional, List, Union, Tuple
 
 import polars as pl
 
@@ -19,7 +18,7 @@ import os
 from functools import partial
 
 from ._base import DatasetBuilder
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor
 
 ID_COLUMN = "objectid"
 TIMESTEMP_COLUMN = "mjd_r"
