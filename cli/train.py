@@ -138,7 +138,7 @@ def main(cfg: DictConfig):
         if "val_data" in cfg
         else None
     )
-    L.seed_everything(cfg.seed + trainer.logger.version, workers=True)
+    L.seed_everything(cfg.seed, workers=True)#+ trainer.logger.version, workers=True)
     trainer.fit(
         model,
         datamodule=DataModule(cfg, train_dataset, val_dataset),
