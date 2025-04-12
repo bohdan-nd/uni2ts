@@ -16,6 +16,7 @@ from uni2ts.transform import Transformation
 import numpy as np
 import os
 from functools import partial
+from tqdm import tqdm
 
 from ._base import DatasetBuilder
 from concurrent.futures import ProcessPoolExecutor
@@ -92,7 +93,7 @@ def _create_hf_dataset_from_polars(files: List[str], ratio: float, freq: str = "
         max_workers = max(1, os.cpu_count() - 1)
     
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
-        train_and_val_datasets = list(executor.map(polars_transform_fun, files))
+        train_and_val_datasets = list(tqdm(executor.map(polars_transform_fun, files), total = len(files)))
         
     train_datasets, val_datasets = zip(*train_and_val_datasets)
     train_dataset = datasets.concatenate_datasets(train_datasets)
