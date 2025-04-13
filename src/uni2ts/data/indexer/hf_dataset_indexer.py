@@ -14,12 +14,13 @@
 #  limitations under the License.
 
 from collections.abc import Iterable
+from typing import Optional
 
 import numpy as np
 import pyarrow as pa
 import pyarrow.compute as pc
 from datasets import Dataset
-from datasets.features import Sequence
+from datasets.features import Sequence, LargeList
 from datasets.formatting import query_table
 
 from uni2ts.common.typing import BatchedData, Data, MultivarTimeSeries, UnivarTimeSeries
@@ -32,22 +33,36 @@ class HuggingFaceDatasetIndexer(Indexer):
     Indexer for Hugging Face Datasets
     """
 
-    def __init__(self, dataset: Dataset, uniform: bool = False):
+    def __init__(self, dataset: Dataset, uniform: bool = False, non_null_counter_column_name: Optional[str] = None):
         """
         :param dataset: underlying Hugging Face Dataset
         :param uniform: whether the underlying data has uniform length
         """
         super().__init__(uniform=uniform)
         self.dataset = dataset
+        self.non_null_counter_column_name = non_null_counter_column_name
         self.features = dict(self.dataset.features)
         self.non_seq_cols = [
             name
             for name, feat in self.features.items()
             if not isinstance(feat, Sequence)
         ]
+        
         self.seq_cols = [
             name for name, feat in self.features.items() if isinstance(feat, Sequence)
         ]
+        
+        # Polars does not support 2D arrays or nested lists, so we explicitly use LargeList to annotate time series to manually reshape them in _pa_column_to_numpy (The original repo does not use LargeList)
+        # We kept 'Sequence' for backward compatibility and non-Polars datasets
+        large_list_cols = [
+            name for name, feat in self.features.items() if isinstance(feat, LargeList)
+        ]
+        
+        self.seq_cols.extend(large_list_cols)
+        
+        if not self.non_null_counter_column_name and large_list_cols:
+            raise ValueError("Large List DS marks the flatten data obtained from Polars, thus non_null_counter_column_name can not be None")
+        
         self.dataset.set_format("numpy", columns=self.non_seq_cols)
 
     def __len__(self) -> int:
@@ -95,6 +110,16 @@ class HuggingFaceDatasetIndexer(Indexer):
                             feature.length if feature.length != -1 else len(flat_slice)
                         )
                     )
+                ]
+                
+            # TimeSeries marked as LargeList represent 2D arrays from Polars that must be reshaped manually using the assosiated 'non_null_counter' to recover original structure
+            elif isinstance(feature.feature, LargeList):
+                non_null_counter_array = pa_table.column(column_name)
+                
+                array = [
+                    chunk.slice(i, 1).flatten().to_numpy(False).reshape(non_null_counter_array[i].as_py(), -1)
+                    for chunk in pa_array.chunks
+                    for i in range(len(chunk))
                 ]
             else:
                 array = [

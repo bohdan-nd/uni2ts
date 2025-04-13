@@ -6,7 +6,7 @@ from typing import Callable, Optional, List, Union, Tuple
 import polars as pl
 
 import datasets
-from datasets import Features, Sequence, Value
+from datasets import Features, Sequence, Value, LargeList
 from torch.utils.data import Dataset
 
 from uni2ts.common.env import env
@@ -58,7 +58,11 @@ def _transform_polars(lf: pl.LazyFrame, freq: str) -> pl.LazyFrame:
             HF_START_COLUMN: Value("timestamp[ms]"),
             HF_FREQ_COLUMN: Value("string"),
             HF_NON_NULL_COUNTER: Value("uint8"),
-            HF_TIMESERIES_COLUMN: Sequence(Value("float32")),
+            # TODO: Either rewrite the HF dataset indexer to support custom 'set_transform' or design an elegant and efficient method to convert the concatenated list into Sequence(Sequence("float32"))
+            # Note: Polars does not support 2D arrays and nested lists, we annotate the flatten time series as LargeList
+            # to allow manual reshaping later within the HF Dataset Indexer.
+            # This is safe because the codebase only utilizes Sequecens and does not rely on LargeList
+            HF_TIMESERIES_COLUMN: LargeList(Value("float32")),
         }
     )
     
@@ -112,19 +116,22 @@ def _select_parquet_files(folder_path: Union[str, Path]):
         ]
 
 
-def _transform_to_uni2ts_format(batch):
-    timeseries = batch[HF_TIMESERIES_COLUMN]
-    non_null_counter = batch.pop(HF_NON_NULL_COUNTER)
+# The option how to transform the column obtained from Polars into a 2D array
+# HF Dataset Indexer uses a custom method to extract data, thus it's no longer needed
+
+# def _transform_to_uni2ts_format(batch):
+#     timeseries = batch[HF_TIMESERIES_COLUMN]
+#     non_null_counter = batch.pop(HF_NON_NULL_COUNTER)
     
-    transformed_timeseries = []
+#     transformed_timeseries = []
     
-    for data, non_null_count in zip(timeseries, non_null_counter):
-        transformed_data = np.array(data).reshape((non_null_count, -1))
-        transformed_timeseries.append(transformed_data)
+#     for data, non_null_count in zip(timeseries, non_null_counter):
+#         transformed_data = np.array(data).reshape((non_null_count, -1))
+#         transformed_timeseries.append(transformed_data)
         
-    batch[HF_TIMESERIES_COLUMN] = transformed_timeseries
+#     batch[HF_TIMESERIES_COLUMN] = transformed_timeseries
     
-    return batch
+#     return batch
 
 @dataclass
 class SimplePolarsDatasetBuilder(DatasetBuilder):
@@ -142,10 +149,12 @@ class SimplePolarsDatasetBuilder(DatasetBuilder):
 
     def load_dataset(self, transform_map: dict[str, Callable[..., Transformation]]) -> Dataset:
         hf_dataset = datasets.load_from_disk(str(self.storage_path / self.dataset))
-        hf_dataset.set_transform(_transform_to_uni2ts_format)
+        
+        # HuggingFaceDatasetIndexer uses custom method to extract values from the dataset, so the 'set_transform' is no longer relevant
+        # hf_dataset.set_transform(_transform_to_uni2ts_format)
         
         return TimeSeriesDataset(
-            HuggingFaceDatasetIndexer(hf_dataset),
+            HuggingFaceDatasetIndexer(hf_dataset, non_null_counter_column_name=HF_NON_NULL_COUNTER),
             transform=transform_map[self.dataset](),
             dataset_weight=self.weight,
             sample_time_series=self.sample_time_series,
@@ -172,13 +181,13 @@ class SimpleEvalDatasetBuilder(DatasetBuilder):
 
     def load_dataset(self, transform_map: dict[str, Callable[..., Transformation]]) -> Dataset:
         hf_dataset = datasets.load_from_disk(str(self.storage_path / self.dataset))
-        hf_dataset.set_transform(_transform_to_uni2ts_format)
+        
+        # HuggingFaceDatasetIndexer uses custom method to extract values from the dataset, so the 'set_transform' is no longer relevant
+        # hf_dataset.set_transform(_transform_to_uni2ts_format)
         
         return EvalDataset(
             self.windows,
-            HuggingFaceDatasetIndexer(
-                
-            ),
+            HuggingFaceDatasetIndexer(hf_dataset, non_null_counter_column_name=HF_NON_NULL_COUNTER),
             transform=transform_map[self.dataset](
                 offset=self.offset,
                 distance=self.distance,
