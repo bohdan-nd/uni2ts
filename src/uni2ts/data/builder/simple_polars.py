@@ -23,7 +23,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 ID_COLUMN = "objectid"
 TIMESTEMP_COLUMN = "mjd_r"
-COLUMNS = ["mag_r", "magerr_r"]
+COLUMNS = ["mjd_r", "mag_r", "magerr_r", "mjd_g", "mag_g", "magerr_g", "mjd_i", "mag_i", "magerr_i"]
 
 HF_ID_COLUMN = "item_id"
 HF_FREQ_COLUMN = "freq"
@@ -102,7 +102,7 @@ def _create_hf_dataset_from_polars(files: List[str], ratio: float, freq: str = "
     train_datasets, val_datasets = zip(*train_and_val_datasets)
     train_dataset = datasets.concatenate_datasets(train_datasets)
     val_dataset = datasets.concatenate_datasets(val_datasets)
-        
+
     return train_dataset, val_dataset
 
 def _select_parquet_files(folder_path: Union[str, Path]):
