@@ -35,7 +35,13 @@ HF_TIMESERIES_COLUMN = "target"
 def mjd_to_unix_timestemp(timestemp):
     return (timestemp - 40587) * 86400 * 1e3
 
-def _transform_polars(lf: pl.LazyFrame, freq: str) -> pl.LazyFrame:
+def _transform_polars(lf: pl.LazyFrame, offset: float, end: float, freq: str) -> pl.LazyFrame:
+    rows = lf.select(pl.len()).collect().item()
+    offset_int = int(rows * offset)
+    length = int(rows * end) - offset_int
+
+    lf = lf.slice(offset_int, length)
+    
     select_id_expr = pl.col(ID_COLUMN).alias(HF_ID_COLUMN)
     first_timestemp_exprs = mjd_to_unix_timestemp(pl.col(TIMESTEMP_COLUMN).list.first()).cast(pl.Datetime("ms")).alias(HF_START_COLUMN)
 
@@ -66,44 +72,26 @@ def _transform_polars(lf: pl.LazyFrame, freq: str) -> pl.LazyFrame:
         }
     )
     
-    return lf, features
+    return lf, features    
 
-def _train_test_polars_split(df: pl.DataFrame, ratio: float, seed: int = 42) -> tuple[pl.DataFrame, pl.DataFrame]:
-    df = df.sample(fraction=1.0, shuffle=True, seed=seed)
-    
-    rows = df.select(pl.len()).item()
-    train_rows = int(ratio * rows)
-    train_df, val_df = df.head(train_rows), df.tail(-train_rows)
-    
-    return train_df, val_df
-    
-
-def _load_and_transform_polars(path, train_val_ratio: float, freq: str) -> Tuple[datasets.Dataset, datasets.Dataset]:
+def _load_and_transform_polars(path, offset: float, end: float, freq: str) -> Tuple[datasets.Dataset, datasets.Dataset]:
     lf = pl.scan_parquet(path)
-    lf, features = _transform_polars(lf, freq)
+    lf, features = _transform_polars(lf, offset, end, freq)
     df = lf.collect()
     
-    train_df, val_df = _train_test_polars_split(df, train_val_ratio)
-    train_dataset = datasets.Dataset.from_polars(train_df, features=features)
-    val_dataset = datasets.Dataset.from_polars(val_df, features=features)
-    
-    return train_dataset, val_dataset
+    return datasets.Dataset.from_polars(df, features=features)
     
 
-def _create_hf_dataset_from_polars(files: List[str], ratio: float, freq: str = "H", max_workers: Optional[int] = None):    
-    polars_transform_fun = partial(_load_and_transform_polars, train_val_ratio = ratio, freq = freq)
+def _create_hf_dataset_from_polars(files: List[str], offset: float, end: float, freq: str = "H", max_workers: Optional[int] = None):    
+    polars_transform_fun = partial(_load_and_transform_polars, offset = offset, end = end, freq = freq)
     
     if not max_workers:
         max_workers = max(1, os.cpu_count() - 1)
     
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
-        train_and_val_datasets = list(tqdm(executor.map(polars_transform_fun, files), total = len(files)))
-        
-    train_datasets, val_datasets = zip(*train_and_val_datasets)
-    train_dataset = datasets.concatenate_datasets(train_datasets)
-    val_dataset = datasets.concatenate_datasets(val_datasets)
+        dataset = list(tqdm(executor.map(polars_transform_fun, files), total = len(files)))
 
-    return train_dataset, val_dataset
+    return datasets.concatenate_datasets(dataset)
 
 def _select_parquet_files(folder_path: Union[str, Path]):
     if isinstance(folder_path, str):
@@ -143,9 +131,12 @@ class SimplePolarsDatasetBuilder(DatasetBuilder):
     def __post_init__(self):
         self.storage_path = Path(self.storage_path)
 
-    def build_dataset(self, dataset: datasets.Dataset):        
-        dataset.info.dataset_name = self.dataset
-        dataset.save_to_disk(str(self.storage_path / self.dataset))
+    def build_dataset(self, folder_path: Path, offset: float, end: float, freq: str, num_workers=None):
+        polars_files = _select_parquet_files(folder_path)
+        hf_dataset = _create_hf_dataset_from_polars(polars_files, offset, end, freq)
+        
+        hf_dataset.info.dataset_name = self.dataset
+        hf_dataset.save_to_disk(str(self.storage_path / self.dataset))
 
     def load_dataset(self, transform_map: dict[str, Callable[..., Transformation]]) -> Dataset:
         hf_dataset = datasets.load_from_disk(str(self.storage_path / self.dataset))
@@ -175,9 +166,12 @@ class SimpleEvalDatasetBuilder(DatasetBuilder):
     def __post_init__(self):
         self.storage_path = Path(self.storage_path)
 
-    def build_dataset(self, dataset: datasets.Dataset):
-        dataset.info.dataset_name = self.dataset
-        dataset.save_to_disk(str(self.storage_path / self.dataset))
+    def build_dataset(self, folder_path: Path, offset: float, end: float, freq: str, num_workers=None):
+        polars_files = _select_parquet_files(folder_path)
+        hf_dataset = _create_hf_dataset_from_polars(polars_files, offset, end, freq)
+        
+        hf_dataset.info.dataset_name = self.dataset
+        hf_dataset.save_to_disk(str(self.storage_path / self.dataset))
 
     def load_dataset(self, transform_map: dict[str, Callable[..., Transformation]]) -> Dataset:
         hf_dataset = datasets.load_from_disk(str(self.storage_path / self.dataset))
@@ -200,9 +194,7 @@ class SimpleEvalDatasetBuilder(DatasetBuilder):
 
 def build_datasets(args):
     dataset_builder = SimplePolarsDatasetBuilder(dataset=args.dataset_name)
-    polars_files = _select_parquet_files(args.folder_path)
-    train_dataset, val_dataset = _create_hf_dataset_from_polars(polars_files, ratio = args.split_ratio, freq = args.freq)
-    dataset_builder.build_dataset(train_dataset)
+    dataset_builder.build_dataset(folder_path=Path(args.folder_path), offset=0.0, end=args.split_ratio, freq=args.freq)
 
     eval_dataset_builder = SimpleEvalDatasetBuilder(
         dataset=f"{args.dataset_name}_eval",
@@ -213,7 +205,9 @@ def build_datasets(args):
         context_length=None,
         patch_size=None,
     )
-    eval_dataset_builder.build_dataset(val_dataset)
+    eval_dataset_builder.build_dataset(
+        folder_path=Path(args.folder_path), offset=args.split_ratio, end=1.0, freq=args.freq
+    )
 
 
 if __name__ == "__main__":
