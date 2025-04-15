@@ -36,13 +36,9 @@ def abstract_class_property(*names: str) -> Callable[[type[T], ...], type[T]]:
             # Check that each attribute is defined.
             for name in names:
                 if not hasattr(_cls, name):
-                    raise NotImplementedError(
-                        f"{name} has not been defined for {_cls.__name__}"
-                    )
+                    raise NotImplementedError(f"{name} has not been defined for {_cls.__name__}")
                 if getattr(_cls, name, NotImplemented) is NotImplemented:
-                    raise NotImplementedError(
-                        f"dataset_list has not been defined for {_cls.__name__}"
-                    )
+                    raise NotImplementedError(f"dataset_list has not been defined for {_cls.__name__}")
 
         cls.__init_subclass__ = classmethod(_init_subclass)
         return cls

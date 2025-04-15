@@ -63,16 +63,13 @@ class RotaryProjection(Projection):
         base: int = 10000,
     ):
         super().__init__(proj_width, num_heads, num_groups)
-        assert (
-            self.proj_width % 2 == 0
-        ), f"proj_width must be even, got {self.proj_width}"
+        assert self.proj_width % 2 == 0, f"proj_width must be even, got {self.proj_width}"
         self.register_buffer(
             "theta",
             1.0
             / torch.pow(
                 base,
-                torch.arange(0, self.proj_width, 2, dtype=torch.float)
-                / self.proj_width,
+                torch.arange(0, self.proj_width, 2, dtype=torch.float) / self.proj_width,
             ),
             persistent=False,
         )
@@ -82,9 +79,7 @@ class RotaryProjection(Projection):
 
     def _init_freq(self, max_len: int):
         if self.cos is None or self.cos.size(-2) < max_len:
-            position = torch.arange(
-                max_len, device=self.theta.device, dtype=self.theta.dtype
-            )
+            position = torch.arange(max_len, device=self.theta.device, dtype=self.theta.dtype)
             m_theta = einsum(position, self.theta, "length, width -> length width")
             m_theta = repeat(m_theta, "length width -> length (width 2)")
             self.register_buffer("cos", torch.cos(m_theta), persistent=False)
@@ -117,9 +112,7 @@ class LearnedProjection(Projection):
     ):
         super().__init__(proj_width, num_heads, num_groups)
         self.max_len = max_len
-        self.weight = nn.Parameter(
-            torch.empty((max_len, self.proj_width, self.proj_width))
-        )
+        self.weight = nn.Parameter(torch.empty((max_len, self.proj_width, self.proj_width)))
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -149,9 +142,7 @@ class QueryKeyProjection(nn.Module):
     ):
         super().__init__()
         if partial_factor is not None:
-            assert (
-                0.0 <= partial_factor[0] < partial_factor[1] <= 1.0
-            ), f"got {partial_factor[0]}, {partial_factor[1]}"
+            assert 0.0 <= partial_factor[0] < partial_factor[1] <= 1.0, f"got {partial_factor[0]}, {partial_factor[1]}"
         assert num_heads > 0 and dim % num_heads == 0
         assert (num_heads % num_groups == 0) and (num_heads >= num_groups)
 

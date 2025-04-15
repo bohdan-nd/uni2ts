@@ -88,7 +88,8 @@ def _get_data_batch(
     other_data["seasonal_error"] = np.array(seasonal_error_values)
 
     return ChainMap(
-        other_data, BatchForecast(forecast_batch, allow_nan=allow_nan_forecast)  # type: ignore
+        other_data,
+        BatchForecast(forecast_batch, allow_nan=allow_nan_forecast),  # type: ignore
     )
 
 
@@ -140,13 +141,9 @@ def evaluate_forecasts_raw(
     forecast_batches = batcher(forecasts, batch_size=batch_size)
 
     pbar = tqdm()
-    for input_batch, label_batch, forecast_batch in zip(
-        input_batches, label_batches, forecast_batches
-    ):
+    for input_batch, label_batch, forecast_batch in zip(input_batches, label_batches, forecast_batches):
         if 0 not in axis:
-            index_data.extend(
-                [(forecast.item_id, forecast.start_date) for forecast in forecast_batch]
-            )
+            index_data.extend([(forecast.item_id, forecast.start_date) for forecast in forecast_batch])
 
         data_batch = _get_data_batch(
             input_batch,
@@ -163,9 +160,7 @@ def evaluate_forecasts_raw(
         pbar.update(len(forecast_batch))
     pbar.close()
 
-    metrics_values = {
-        metric_name: evaluator.get() for metric_name, evaluator in evaluators.items()
-    }
+    metrics_values = {metric_name: evaluator.get() for metric_name, evaluator in evaluators.items()}
 
     if index_data:
         metrics_values["__index_0"] = index_data

@@ -81,9 +81,9 @@ class Forecast(L.LightningModule):
         patch_size: int | str = "auto",
         num_samples: int = 100,
     ):
-        assert (module is not None) or (
-            module_kwargs is not None
-        ), "if module is not provided, module_kwargs is required"
+        assert (module is not None) or (module_kwargs is not None), (
+            "if module is not provided, module_kwargs is required"
+        )
         super().__init__()
         self.save_hyperparameters(ignore=["module"])
         self.module = MoiraiModule(**module_kwargs) if module is None else module
@@ -240,15 +240,9 @@ class Forecast(L.LightningModule):
         past_observed_target: Bool[torch.Tensor, "batch past_time tgt"],
         past_is_pad: Bool[torch.Tensor, "batch past_time"],
         feat_dynamic_real: Optional[Float[torch.Tensor, "batch time feat"]] = None,
-        observed_feat_dynamic_real: Optional[
-            Float[torch.Tensor, "batch time feat"]
-        ] = None,
-        past_feat_dynamic_real: Optional[
-            Float[torch.Tensor, "batch past_time past_feat"]
-        ] = None,
-        past_observed_feat_dynamic_real: Optional[
-            Float[torch.Tensor, "batch past_time past_feat"]
-        ] = None,
+        observed_feat_dynamic_real: Optional[Float[torch.Tensor, "batch time feat"]] = None,
+        past_feat_dynamic_real: Optional[Float[torch.Tensor, "batch past_time past_feat"]] = None,
+        past_observed_feat_dynamic_real: Optional[Float[torch.Tensor, "batch past_time past_feat"]] = None,
         num_samples: Optional[int] = None,
     ) -> Float[torch.Tensor, "batch sample future_time *tgt"]:
         if self.hparams.patch_size == "auto":
@@ -260,14 +254,10 @@ class Forecast(L.LightningModule):
                     self._val_loss(
                         patch_size=patch_size,
                         target=past_target[..., : self.past_length, :],
-                        observed_target=past_observed_target[
-                            ..., : self.past_length, :
-                        ],
+                        observed_target=past_observed_target[..., : self.past_length, :],
                         is_pad=past_is_pad[..., : self.past_length],
                         feat_dynamic_real=(
-                            feat_dynamic_real[..., : self.past_length, :]
-                            if feat_dynamic_real is not None
-                            else None
+                            feat_dynamic_real[..., : self.past_length, :] if feat_dynamic_real is not None else None
                         ),
                         observed_feat_dynamic_real=(
                             observed_feat_dynamic_real[..., : self.past_length, :]
@@ -275,16 +265,12 @@ class Forecast(L.LightningModule):
                             else None
                         ),
                         past_feat_dynamic_real=(
-                            past_feat_dynamic_real[
-                                ..., : self.hparams.context_length, :
-                            ]
+                            past_feat_dynamic_real[..., : self.hparams.context_length, :]
                             if past_feat_dynamic_real is not None
                             else None
                         ),
                         past_observed_feat_dynamic_real=(
-                            past_observed_feat_dynamic_real[
-                                ..., : self.hparams.context_length, :
-                            ]
+                            past_observed_feat_dynamic_real[..., : self.hparams.context_length, :]
                             if past_observed_feat_dynamic_real is not None
                             else None
                         ),
@@ -295,11 +281,7 @@ class Forecast(L.LightningModule):
                     past_target[..., -self.hparams.context_length :, :],
                     past_observed_target[..., -self.hparams.context_length :, :],
                     past_is_pad[..., -self.hparams.context_length :],
-                    (
-                        feat_dynamic_real[..., -self.past_length :, :]
-                        if feat_dynamic_real is not None
-                        else None
-                    ),
+                    (feat_dynamic_real[..., -self.past_length :, :] if feat_dynamic_real is not None else None),
                     (
                         observed_feat_dynamic_real[..., -self.past_length :, :]
                         if observed_feat_dynamic_real is not None
@@ -311,9 +293,7 @@ class Forecast(L.LightningModule):
                         else None
                     ),
                     (
-                        past_observed_feat_dynamic_real[
-                            ..., -self.hparams.context_length :, :
-                        ]
+                        past_observed_feat_dynamic_real[..., -self.hparams.context_length :, :]
                         if past_observed_feat_dynamic_real is not None
                         else None
                     ),
@@ -321,9 +301,7 @@ class Forecast(L.LightningModule):
                 preds.append(
                     self._format_preds(
                         patch_size,
-                        distr.sample(
-                            torch.Size((num_samples or self.hparams.num_samples,))
-                        ),
+                        distr.sample(torch.Size((num_samples or self.hparams.num_samples,))),
                         past_target.shape[-1],
                     )
                 )
@@ -343,9 +321,7 @@ class Forecast(L.LightningModule):
                 past_observed_feat_dynamic_real,
             )
             preds = distr.sample(torch.Size((num_samples or self.hparams.num_samples,)))
-            return self._format_preds(
-                self.hparams.patch_size, preds, past_target.shape[-1]
-            )
+            return self._format_preds(self.hparams.patch_size, preds, past_target.shape[-1])
 
     def _val_loss(
         self,
@@ -354,15 +330,9 @@ class Forecast(L.LightningModule):
         observed_target: Bool[torch.Tensor, "batch time tgt"],
         is_pad: Bool[torch.Tensor, "batch time"],
         feat_dynamic_real: Optional[Float[torch.Tensor, "batch time feat"]] = None,
-        observed_feat_dynamic_real: Optional[
-            Float[torch.Tensor, "batch time feat"]
-        ] = None,
-        past_feat_dynamic_real: Optional[
-            Float[torch.Tensor, "batch past_time past_feat"]
-        ] = None,
-        past_observed_feat_dynamic_real: Optional[
-            Float[torch.Tensor, "batch past_time past_feat"]
-        ] = None,
+        observed_feat_dynamic_real: Optional[Float[torch.Tensor, "batch time feat"]] = None,
+        past_feat_dynamic_real: Optional[Float[torch.Tensor, "batch past_time past_feat"]] = None,
+        past_observed_feat_dynamic_real: Optional[Float[torch.Tensor, "batch past_time past_feat"]] = None,
     ) -> Float[torch.Tensor, "batch"]:
         (
             target,
@@ -377,9 +347,7 @@ class Forecast(L.LightningModule):
             past_observed_target=observed_target[..., : self.hparams.context_length, :],
             past_is_pad=is_pad[..., : self.hparams.context_length],
             future_target=target[..., self.hparams.context_length :, :],
-            future_observed_target=observed_target[
-                ..., self.hparams.context_length :, :
-            ],
+            future_observed_target=observed_target[..., self.hparams.context_length :, :],
             future_is_pad=is_pad[..., self.hparams.context_length :],
             feat_dynamic_real=feat_dynamic_real,
             observed_feat_dynamic_real=observed_feat_dynamic_real,
@@ -412,15 +380,9 @@ class Forecast(L.LightningModule):
         past_observed_target: Bool[torch.Tensor, "batch past_time tgt"],
         past_is_pad: Bool[torch.Tensor, "batch past_time"],
         feat_dynamic_real: Optional[Float[torch.Tensor, "batch time feat"]] = None,
-        observed_feat_dynamic_real: Optional[
-            Float[torch.Tensor, "batch time feat"]
-        ] = None,
-        past_feat_dynamic_real: Optional[
-            Float[torch.Tensor, "batch past_time past_feat"]
-        ] = None,
-        past_observed_feat_dynamic_real: Optional[
-            Float[torch.Tensor, "batch past_time past_feat"]
-        ] = None,
+        observed_feat_dynamic_real: Optional[Float[torch.Tensor, "batch time feat"]] = None,
+        past_feat_dynamic_real: Optional[Float[torch.Tensor, "batch past_time past_feat"]] = None,
+        past_observed_feat_dynamic_real: Optional[Float[torch.Tensor, "batch past_time past_feat"]] = None,
     ) -> Distribution:
         (
             target,
@@ -473,18 +435,14 @@ class Forecast(L.LightningModule):
         self,
         patch_size: int,
         past_observed_target: Bool[torch.Tensor, "batch past_seq tgt"],
-    ) -> tuple[
-        Int[torch.Tensor, "batch past_token"], Int[torch.Tensor, "batch future_token"]
-    ]:
+    ) -> tuple[Int[torch.Tensor, "batch past_token"], Int[torch.Tensor, "batch future_token"]]:
         past_seq_id = reduce(
             self._patched_seq_pad(patch_size, past_observed_target, -2, left=True),
             "... (seq patch) dim -> ... seq",
             "max",
             patch=patch_size,
         )
-        past_seq_id = torch.clamp(
-            past_seq_id.cummax(dim=-1).values.cumsum(dim=-1) - 1, min=0
-        )
+        past_seq_id = torch.clamp(past_seq_id.cummax(dim=-1).values.cumsum(dim=-1) - 1, min=0)
         batch_shape = " ".join(map(str, past_observed_target.shape[:-2]))
         future_seq_id = (
             repeat(
@@ -509,20 +467,12 @@ class Forecast(L.LightningModule):
         past_observed_target: Bool[torch.Tensor, "batch past_time tgt"],
         past_is_pad: Bool[torch.Tensor, "batch past_time"],
         future_target: Optional[Float[torch.Tensor, "batch future_time tgt"]] = None,
-        future_observed_target: Optional[
-            Bool[torch.Tensor, "batch future_time tgt"]
-        ] = None,
+        future_observed_target: Optional[Bool[torch.Tensor, "batch future_time tgt"]] = None,
         future_is_pad: Optional[Bool[torch.Tensor, "batch future_time"]] = None,
         feat_dynamic_real: Optional[Float[torch.Tensor, "batch time feat"]] = None,
-        observed_feat_dynamic_real: Optional[
-            Float[torch.Tensor, "batch time feat"]
-        ] = None,
-        past_feat_dynamic_real: Optional[
-            Float[torch.Tensor, "batch past_time past_feat"]
-        ] = None,
-        past_observed_feat_dynamic_real: Optional[
-            Float[torch.Tensor, "batch past_time past_feat"]
-        ] = None,
+        observed_feat_dynamic_real: Optional[Float[torch.Tensor, "batch time feat"]] = None,
+        past_feat_dynamic_real: Optional[Float[torch.Tensor, "batch past_time past_feat"]] = None,
+        past_observed_feat_dynamic_real: Optional[Float[torch.Tensor, "batch past_time past_feat"]] = None,
     ) -> tuple[
         Float[torch.Tensor, "batch combine_seq patch"],
         Bool[torch.Tensor, "batch combine_seq patch"],
@@ -541,9 +491,7 @@ class Forecast(L.LightningModule):
         variate_id = []
         prediction_mask = []
         dim_count = 0
-        past_seq_id, future_seq_id = self._generate_time_id(
-            patch_size, past_observed_target
-        )
+        past_seq_id, future_seq_id = self._generate_time_id(patch_size, past_observed_target)
 
         if future_target is None:
             future_target = torch.zeros(
@@ -567,9 +515,7 @@ class Forecast(L.LightningModule):
                 ),
                 torch.nn.functional.pad(
                     rearrange(
-                        self._patched_seq_pad(
-                            patch_size, future_target, -2, left=False
-                        ),
+                        self._patched_seq_pad(patch_size, future_target, -2, left=False),
                         "... (seq patch) dim -> ... (dim seq) patch",
                         patch=patch_size,
                     ),
@@ -591,9 +537,7 @@ class Forecast(L.LightningModule):
             [
                 torch.nn.functional.pad(
                     rearrange(
-                        self._patched_seq_pad(
-                            patch_size, past_observed_target, -2, left=True
-                        ),
+                        self._patched_seq_pad(patch_size, past_observed_target, -2, left=True),
                         "... (seq patch) dim -> ... (dim seq) patch",
                         patch=patch_size,
                     ),
@@ -601,9 +545,7 @@ class Forecast(L.LightningModule):
                 ),
                 torch.nn.functional.pad(
                     rearrange(
-                        self._patched_seq_pad(
-                            patch_size, future_observed_target, -2, left=False
-                        ),
+                        self._patched_seq_pad(patch_size, future_observed_target, -2, left=False),
                         "... (seq patch) dim -> ... (dim seq) patch",
                         patch=patch_size,
                     ),
@@ -621,12 +563,7 @@ class Forecast(L.LightningModule):
             [
                 repeat(
                     reduce(
-                        (
-                            self._patched_seq_pad(
-                                patch_size, past_is_pad, -1, left=True, value=1
-                            )
-                            == 0
-                        ).int(),
+                        (self._patched_seq_pad(patch_size, past_is_pad, -1, left=True, value=1) == 0).int(),
                         "... (seq patch) -> ... seq",
                         "max",
                         patch=patch_size,
@@ -636,12 +573,7 @@ class Forecast(L.LightningModule):
                 ),
                 repeat(
                     reduce(
-                        (
-                            self._patched_seq_pad(
-                                patch_size, future_is_pad, -1, left=False, value=1
-                            )
-                            == 0
-                        ).int(),
+                        (self._patched_seq_pad(patch_size, future_is_pad, -1, left=False, value=1) == 0).int(),
                         "... (seq patch) -> ... seq",
                         "max",
                         patch=patch_size,
@@ -651,10 +583,7 @@ class Forecast(L.LightningModule):
                 ),
             ]
         )
-        time_id.extend(
-            [past_seq_id] * past_target.shape[-1]
-            + [future_seq_id] * past_target.shape[-1]
-        )
+        time_id.extend([past_seq_id] * past_target.shape[-1] + [future_seq_id] * past_target.shape[-1])
         variate_id.extend(
             [
                 repeat(
@@ -673,17 +602,12 @@ class Forecast(L.LightningModule):
         prediction_mask.extend(
             [
                 torch.zeros(
-                    batch_shape
-                    + (self.context_token_length(patch_size) * past_target.shape[-1],),
+                    batch_shape + (self.context_token_length(patch_size) * past_target.shape[-1],),
                     dtype=torch.bool,
                     device=device,
                 ),
                 torch.ones(
-                    batch_shape
-                    + (
-                        self.prediction_token_length(patch_size)
-                        * past_target.shape[-1],
-                    ),
+                    batch_shape + (self.prediction_token_length(patch_size) * past_target.shape[-1],),
                     dtype=torch.bool,
                     device=device,
                 ),
@@ -691,9 +615,7 @@ class Forecast(L.LightningModule):
         )
         if feat_dynamic_real is not None:
             if observed_feat_dynamic_real is None:
-                raise ValueError(
-                    "observed_feat_dynamic_real must be provided if feat_dynamic_real is provided"
-                )
+                raise ValueError("observed_feat_dynamic_real must be provided if feat_dynamic_real is provided")
 
             target.extend(
                 [
@@ -701,9 +623,7 @@ class Forecast(L.LightningModule):
                         rearrange(
                             self._patched_seq_pad(
                                 patch_size,
-                                feat_dynamic_real[
-                                    ..., : self.hparams.context_length, :
-                                ],
+                                feat_dynamic_real[..., : self.hparams.context_length, :],
                                 -2,
                                 left=True,
                             ),
@@ -716,9 +636,7 @@ class Forecast(L.LightningModule):
                         rearrange(
                             self._patched_seq_pad(
                                 patch_size,
-                                feat_dynamic_real[
-                                    ..., self.hparams.context_length :, :
-                                ],
+                                feat_dynamic_real[..., self.hparams.context_length :, :],
                                 -2,
                                 left=False,
                             ),
@@ -735,9 +653,7 @@ class Forecast(L.LightningModule):
                         rearrange(
                             self._patched_seq_pad(
                                 patch_size,
-                                observed_feat_dynamic_real[
-                                    ..., : self.hparams.context_length, :
-                                ],
+                                observed_feat_dynamic_real[..., : self.hparams.context_length, :],
                                 -2,
                                 left=True,
                             ),
@@ -750,9 +666,7 @@ class Forecast(L.LightningModule):
                         rearrange(
                             self._patched_seq_pad(
                                 patch_size,
-                                observed_feat_dynamic_real[
-                                    ..., self.hparams.context_length :, :
-                                ],
+                                observed_feat_dynamic_real[..., self.hparams.context_length :, :],
                                 -2,
                                 left=False,
                             ),
@@ -767,12 +681,7 @@ class Forecast(L.LightningModule):
                 [
                     repeat(
                         reduce(
-                            (
-                                self._patched_seq_pad(
-                                    patch_size, past_is_pad, -1, left=True
-                                )
-                                == 0
-                            ).int(),
+                            (self._patched_seq_pad(patch_size, past_is_pad, -1, left=True) == 0).int(),
                             "... (seq patch) -> ... seq",
                             "max",
                             patch=patch_size,
@@ -781,31 +690,22 @@ class Forecast(L.LightningModule):
                         dim=feat_dynamic_real.shape[-1],
                     ),
                     torch.ones(
-                        batch_shape
-                        + (
-                            self.prediction_token_length(patch_size)
-                            * feat_dynamic_real.shape[-1],
-                        ),
+                        batch_shape + (self.prediction_token_length(patch_size) * feat_dynamic_real.shape[-1],),
                         dtype=torch.long,
                         device=device,
                     ),
                 ]
             )
-            time_id.extend(
-                [past_seq_id] * feat_dynamic_real.shape[-1]
-                + [future_seq_id] * feat_dynamic_real.shape[-1]
-            )
+            time_id.extend([past_seq_id] * feat_dynamic_real.shape[-1] + [future_seq_id] * feat_dynamic_real.shape[-1])
             variate_id.extend(
                 [
                     repeat(
-                        torch.arange(feat_dynamic_real.shape[-1], device=device)
-                        + dim_count,
+                        torch.arange(feat_dynamic_real.shape[-1], device=device) + dim_count,
                         f"dim -> {' '.join(map(str, batch_shape))} (dim past)",
                         past=self.context_token_length(patch_size),
                     ),
                     repeat(
-                        torch.arange(feat_dynamic_real.shape[-1], device=device)
-                        + dim_count,
+                        torch.arange(feat_dynamic_real.shape[-1], device=device) + dim_count,
                         f"dim -> {' '.join(map(str, batch_shape))} (dim future)",
                         future=self.prediction_token_length(patch_size),
                     ),
@@ -815,20 +715,12 @@ class Forecast(L.LightningModule):
             prediction_mask.extend(
                 [
                     torch.zeros(
-                        batch_shape
-                        + (
-                            self.context_token_length(patch_size)
-                            * feat_dynamic_real.shape[-1],
-                        ),
+                        batch_shape + (self.context_token_length(patch_size) * feat_dynamic_real.shape[-1],),
                         dtype=torch.bool,
                         device=device,
                     ),
                     torch.zeros(
-                        batch_shape
-                        + (
-                            self.prediction_token_length(patch_size)
-                            * feat_dynamic_real.shape[-1],
-                        ),
+                        batch_shape + (self.prediction_token_length(patch_size) * feat_dynamic_real.shape[-1],),
                         dtype=torch.bool,
                         device=device,
                     ),
@@ -843,9 +735,7 @@ class Forecast(L.LightningModule):
             target.append(
                 torch.nn.functional.pad(
                     rearrange(
-                        self._patched_seq_pad(
-                            patch_size, past_feat_dynamic_real, -2, left=True
-                        ),
+                        self._patched_seq_pad(patch_size, past_feat_dynamic_real, -2, left=True),
                         "... (seq patch) dim -> ... (dim seq) patch",
                         patch=patch_size,
                     ),
@@ -855,9 +745,7 @@ class Forecast(L.LightningModule):
             observed_mask.append(
                 torch.nn.functional.pad(
                     rearrange(
-                        self._patched_seq_pad(
-                            patch_size, past_observed_feat_dynamic_real, -2, left=True
-                        ),
+                        self._patched_seq_pad(patch_size, past_observed_feat_dynamic_real, -2, left=True),
                         "... (seq patch) dim -> ... (dim seq) patch",
                         patch=patch_size,
                     ),
@@ -867,12 +755,7 @@ class Forecast(L.LightningModule):
             sample_id.append(
                 repeat(
                     reduce(
-                        (
-                            self._patched_seq_pad(
-                                patch_size, past_is_pad, -1, left=True
-                            )
-                            == 0
-                        ).int(),
+                        (self._patched_seq_pad(patch_size, past_is_pad, -1, left=True) == 0).int(),
                         "... (seq patch) -> ... seq",
                         "max",
                         patch=patch_size,
@@ -885,8 +768,7 @@ class Forecast(L.LightningModule):
 
             variate_id.append(
                 repeat(
-                    torch.arange(past_feat_dynamic_real.shape[-1], device=device)
-                    + dim_count,
+                    torch.arange(past_feat_dynamic_real.shape[-1], device=device) + dim_count,
                     f"dim -> {' '.join(map(str, batch_shape))} (dim past)",
                     past=self.context_token_length(patch_size),
                 )
@@ -894,11 +776,7 @@ class Forecast(L.LightningModule):
             dim_count += past_feat_dynamic_real.shape[-1]
             prediction_mask.append(
                 torch.zeros(
-                    batch_shape
-                    + (
-                        self.context_token_length(patch_size)
-                        * past_feat_dynamic_real.shape[-1],
-                    ),
+                    batch_shape + (self.context_token_length(patch_size) * past_feat_dynamic_real.shape[-1],),
                     dtype=torch.bool,
                     device=device,
                 )

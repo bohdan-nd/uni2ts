@@ -30,9 +30,7 @@ class LogNormalOutput(DistributionOutput):
     @property
     def domain_map(
         self,
-    ) -> PyTree[
-        Callable[[Float[torch.Tensor, "*batch 1"]], Float[torch.Tensor, "*batch"]], "T"
-    ]:
+    ) -> PyTree[Callable[[Float[torch.Tensor, "*batch 1"]], Float[torch.Tensor, "*batch"]], "T"]:
         return dict(loc=self._loc, scale=self._scale)
 
     @staticmethod

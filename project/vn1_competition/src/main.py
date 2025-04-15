@@ -65,12 +65,8 @@ def predict(df_context, df_future, checkpoint_path):
         col for col in df.columns if col not in ["Client", "Warehouse", "Product"]
     ]
     df = df[cols]
-    date_cols = [
-        col for col in df.columns if col not in ["Client", "Warehouse", "Product"]
-    ]
-    df.rename(
-        columns={col: col.strftime("%Y-%m-%d") for col in date_cols}, inplace=True
-    )
+    date_cols = [col for col in df.columns if col not in ["Client", "Warehouse", "Product"]]
+    df.rename(columns={col: col.strftime("%Y-%m-%d") for col in date_cols}, inplace=True)
     return df
 
 
@@ -104,10 +100,7 @@ def main():
     project_dir = current_dir.parent
     file_path1 = project_dir / "data/phase_0_sales.csv"
     file_path2 = project_dir / "data/phase_1_sales.csv"
-    checkpoint_path = (
-        project_dir.parent.parent
-        / "outputs/VN1/run1/checkpoints/epoch=18-step=1900.ckpt"
-    )
+    checkpoint_path = project_dir.parent.parent / "outputs/VN1/run1/checkpoints/epoch=18-step=1900.ckpt"
     df_context, df_future = load_context(file_path1, file_path2)
     df = predict(df_context, df_future, checkpoint_path)
     score = vn1_competition_evaluation(df)

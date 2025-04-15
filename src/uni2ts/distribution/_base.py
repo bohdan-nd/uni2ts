@@ -29,9 +29,7 @@ from uni2ts.module.ts_embed import MultiOutSizeLinear
 
 
 # TODO: Replace with tree_map when multiple trees supported
-def tree_map_multi(
-    func: Callable, tree: PyTree[Any, "T"], *other: PyTree[Any, "T"]
-) -> PyTree[Any, "T"]:
+def tree_map_multi(func: Callable, tree: PyTree[Any, "T"], *other: PyTree[Any, "T"]) -> PyTree[Any, "T"]:
     """Tree map with function requiring multiple inputs, where other inputs are from a PyTree too."""
     leaves, treespec = tree_flatten(tree)
     other_leaves = [tree_flatten(o)[0] for o in other]
@@ -42,9 +40,7 @@ def tree_map_multi(
 def convert_to_module(tree: PyTree[nn.Module, "T"]) -> PyTree[nn.Module, "T"]:
     """Convert a simple container PyTree into an nn.Module PyTree"""
     if isinstance(tree, dict):
-        return nn.ModuleDict(
-            {key: convert_to_module(child) for key, child in tree.items()}
-        )
+        return nn.ModuleDict({key: convert_to_module(child) for key, child in tree.items()})
     if isinstance(tree, (list, tuple)):
         return nn.ModuleList([convert_to_module(child) for child in tree])
     return tree
@@ -103,14 +99,10 @@ class DistrParamProj(nn.Module):
                 )
 
         else:
-            raise ValueError(
-                f"out_features must be int or sequence of ints, got invalid type: {type(out_features)}"
-            )
+            raise ValueError(f"out_features must be int or sequence of ints, got invalid type: {type(out_features)}")
 
         self.proj = convert_to_module(tree_map(proj, args_dim))
-        self.out_size = (
-            out_features if isinstance(out_features, int) else max(out_features)
-        )
+        self.out_size = out_features if isinstance(out_features, int) else max(out_features)
 
     def forward(self, *args) -> PyTree[Float[torch.Tensor, "*batch out dim"], "T"]:
         params_unbounded = tree_map(
@@ -121,9 +113,7 @@ class DistrParamProj(nn.Module):
             ),
             convert_to_container(self.proj),
         )
-        params = tree_map_multi(
-            lambda func, inp: func(inp), self.domain_map, params_unbounded
-        )
+        params = tree_map_multi(lambda func, inp: func(inp), self.domain_map, params_unbounded)
         return params
 
 

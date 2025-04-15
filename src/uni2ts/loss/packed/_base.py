@@ -55,12 +55,8 @@ class PackedLoss(abc.ABC):
         if variate_id is None:
             variate_id = torch.zeros_like(prediction_mask, dtype=torch.long)
 
-        loss = self._loss_func(
-            pred, target, prediction_mask, observed_mask, sample_id, variate_id
-        )
-        return self.reduce_loss(
-            loss, prediction_mask, observed_mask, sample_id, variate_id
-        )
+        loss = self._loss_func(pred, target, prediction_mask, observed_mask, sample_id, variate_id)
+        return self.reduce_loss(loss, prediction_mask, observed_mask, sample_id, variate_id)
 
     @abc.abstractmethod
     def _loss_func(

@@ -97,22 +97,15 @@ class DataModule(L.LightningDataModule):
 
     @property
     def train_batch_size(self) -> int:
-        return self.cfg.train_dataloader.batch_size // (
-            self.trainer.world_size * self.trainer.accumulate_grad_batches
-        )
+        return self.cfg.train_dataloader.batch_size // (self.trainer.world_size * self.trainer.accumulate_grad_batches)
 
     @property
     def val_batch_size(self) -> int:
-        return self.cfg.val_dataloader.batch_size // (
-            self.trainer.world_size * self.trainer.accumulate_grad_batches
-        )
+        return self.cfg.val_dataloader.batch_size // (self.trainer.world_size * self.trainer.accumulate_grad_batches)
 
     @property
     def train_num_batches_per_epoch(self) -> int:
-        return (
-            self.cfg.train_dataloader.num_batches_per_epoch
-            * self.trainer.accumulate_grad_batches
-        )
+        return self.cfg.train_dataloader.num_batches_per_epoch * self.trainer.accumulate_grad_batches
 
 
 @hydra.main(version_base="1.3", config_name="default.yaml")
@@ -127,9 +120,7 @@ def main(cfg: DictConfig):
     if cfg.compile:
         model.module.compile(mode=cfg.compile)
     trainer: L.Trainer = instantiate(cfg.trainer)
-    train_dataset: Dataset = instantiate(cfg.data).load_dataset(
-        model.train_transform_map
-    )
+    train_dataset: Dataset = instantiate(cfg.data).load_dataset(model.train_transform_map)
     val_dataset: Optional[Dataset | list[Dataset]] = (
         tree_map(
             lambda ds: ds.load_dataset(model.val_transform_map),
@@ -138,7 +129,7 @@ def main(cfg: DictConfig):
         if "val_data" in cfg
         else None
     )
-    L.seed_everything(cfg.seed, workers=True)#+ trainer.logger.version, workers=True)
+    L.seed_everything(cfg.seed, workers=True)  # + trainer.logger.version, workers=True)
     trainer.fit(
         model,
         datamodule=DataModule(cfg, train_dataset, val_dataset),

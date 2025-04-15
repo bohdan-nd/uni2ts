@@ -60,9 +60,7 @@ def test_masked_prediction(
     data_entry = {"target": np.random.randn(*((target_dim, length) + patch_dim))}
     for field, dim in (truncate_map | optional_truncate_map).items():
         if truncate_list:
-            data_entry[field] = [
-                np.random.randn(*((dim, length) + patch_dim)) for _ in range(2)
-            ]
+            data_entry[field] = [np.random.randn(*((dim, length) + patch_dim)) for _ in range(2)]
         else:
             data_entry[field] = np.random.randn(*((dim, length) + patch_dim))
     masked_prediction = MaskedPrediction(
@@ -160,9 +158,7 @@ def test_extend_mask(
     transformed_data_entry = extend_mask(data_entry.copy())
     output = transformed_data_entry["prediction_mask"]
     assert len(output) == 1 + len(field_map) + len(optional_map)
-    for target_mask, (field, (dim, length)) in zip(
-        output[1:], (field_map | optional_map).items()
-    ):
+    for target_mask, (field, (dim, length)) in zip(output[1:], (field_map | optional_map).items()):
         assert target_mask.shape[0] == dim
         assert target_mask.shape[1] == length
         assert target_mask.dtype == np.dtype(bool)
@@ -200,9 +196,7 @@ def test_eval_masked_prediction(
     data_entry = {"target": np.random.randn(*((target_dim, length) + patch_dim))}
     for field, dim in (truncate_map | optional_truncate_map).items():
         if truncate_list:
-            data_entry[field] = [
-                np.random.randn(*((dim, length) + patch_dim)) for _ in range(2)
-            ]
+            data_entry[field] = [np.random.randn(*((dim, length) + patch_dim)) for _ in range(2)]
         else:
             data_entry[field] = np.random.randn(*((dim, length) + patch_dim))
     masked_prediction = EvalMaskedPrediction(

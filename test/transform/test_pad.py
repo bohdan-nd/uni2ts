@@ -34,9 +34,7 @@ def test_pad(
     dim: int,
 ):
     data_entry = {
-        "target": np.random.randn(
-            *((dim, target_length) if dim > 1 else (target_length,))
-        ),
+        "target": np.random.randn(*((dim, target_length) if dim > 1 else (target_length,))),
     }
     transformed_data_entry = Pad(
         min_length=min_length,
@@ -65,9 +63,7 @@ def test_pad_freq(
     dim: int,
 ):
     data_entry = {
-        "target": np.random.randn(
-            *((dim, target_length) if dim > 1 else (target_length,))
-        ),
+        "target": np.random.randn(*((dim, target_length) if dim > 1 else (target_length,))),
         "freq": "h",
     }
 
@@ -96,11 +92,7 @@ def test_patch_eval_pad(
 ):
     data_entry = {
         "target": np.random.randn(
-            *(
-                (dim, context_length + prediction_length)
-                if dim > 1
-                else (context_length + prediction_length,)
-            )
+            *((dim, context_length + prediction_length) if dim > 1 else (context_length + prediction_length,))
         ),
     }
     eval_pad = EvalPad(

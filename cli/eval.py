@@ -57,15 +57,10 @@ def main(cfg: DictConfig):
             writer.close()
             break
         except torch.cuda.OutOfMemoryError:
-            print(
-                f"OutOfMemoryError at batch_size {batch_size}, reducing to {batch_size//2}"
-            )
+            print(f"OutOfMemoryError at batch_size {batch_size}, reducing to {batch_size // 2}")
             batch_size //= 2
             if batch_size < cfg.min_batch_size:
-                print(
-                    f"batch_size {batch_size} smaller than "
-                    f"min_batch_size {cfg.min_batch_size}, ending evaluation"
-                )
+                print(f"batch_size {batch_size} smaller than min_batch_size {cfg.min_batch_size}, ending evaluation")
                 break
 
 

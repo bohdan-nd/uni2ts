@@ -56,9 +56,7 @@ class FeedForward(nn.Module):
         x = self._in_proj(x)
         return self.dropout2(self.fc2(self.dropout1(x)))
 
-    def _in_proj(
-        self, x: Float[torch.Tensor, "... in_dim"]
-    ) -> Float[torch.Tensor, "... out_dim"]:
+    def _in_proj(self, x: Float[torch.Tensor, "... in_dim"]) -> Float[torch.Tensor, "... out_dim"]:
         return self.activation(self.fc1(x))
 
 
@@ -86,9 +84,7 @@ class GatedLinearUnitFeedForward(FeedForward):
     def adjust_hidden_dim(dim):
         return (int(dim * 2 / 3) + 7) // 8 * 8
 
-    def _in_proj(
-        self, x: Float[torch.Tensor, "... in_dim"]
-    ) -> Float[torch.Tensor, "... out_dim"]:
+    def _in_proj(self, x: Float[torch.Tensor, "... in_dim"]) -> Float[torch.Tensor, "... out_dim"]:
         return self.activation(self.fc_gate(x)) * self.fc1(x)
 
 
@@ -148,9 +144,7 @@ class MoEFeedForward(nn.Module):
         results = torch.zeros_like(x_squashed)
         for i, expert in enumerate(self.experts):
             batch_idx, nth_expert = torch.where(selected_experts == i)
-            results[batch_idx] += weights[batch_idx, nth_expert, None] * expert(
-                x_squashed[batch_idx]
-            )
+            results[batch_idx] += weights[batch_idx, nth_expert, None] * expert(x_squashed[batch_idx])
 
         results = results.view_as(x)
         return results

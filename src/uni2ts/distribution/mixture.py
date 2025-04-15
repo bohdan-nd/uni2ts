@@ -96,9 +96,7 @@ class Mixture(Distribution):
                     f"but found invalid values:\n{value}"
                 )
 
-        weights_log_probs = self.weights.logits.expand(
-            value.shape + (len(self.components),)
-        )
+        weights_log_probs = self.weights.logits.expand(value.shape + (len(self.components),))
         weights_log_probs = torch.stack(weights_log_probs.unbind(dim=-1))
         # avoid nan grads, https://github.com/tensorflow/probability/blob/main/discussion/where-nan.pdf
         components_log_probs = torch.stack(
@@ -126,12 +124,8 @@ class Mixture(Distribution):
 
     def sample(self, sample_shape: torch.Size = torch.Size()) -> torch.Tensor:
         with torch.no_grad():
-            components_samples = torch.stack(
-                [comp.sample(sample_shape) for comp in self.components], dim=-1
-            )
-            weights_sample = unsqueeze_trailing_dims(
-                self.weights.sample(sample_shape), components_samples.shape
-            )
+            components_samples = torch.stack([comp.sample(sample_shape) for comp in self.components], dim=-1)
+            weights_sample = unsqueeze_trailing_dims(self.weights.sample(sample_shape), components_samples.shape)
             samples = torch.gather(
                 components_samples,
                 dim=-1,
@@ -156,9 +150,7 @@ class Mixture(Distribution):
         components_var = torch.stack([comp.variance for comp in self.components])
         expected_cond_var = (weights_probs * components_var).sum(dim=0)
         components_means = torch.stack([comp.mean for comp in self.components])
-        var_cond_expectation = (weights_probs * components_means.pow(2.0)).sum(
-            dim=0
-        ) - self.mean.pow(2.0)
+        var_cond_expectation = (weights_probs * components_means.pow(2.0)).sum(dim=0) - self.mean.pow(2.0)
         return expected_cond_var + var_cond_expectation
 
     def cdf(self, value: torch.Tensor) -> torch.Tensor:
@@ -179,14 +171,10 @@ class MixtureOutput(DistributionOutput):
         validate_args: Optional[bool] = None,
     ) -> Distribution:
         return self.distr_cls(
-            weights=Categorical(
-                logits=distr_params["weights_logits"], validate_args=validate_args
-            ),
+            weights=Categorical(logits=distr_params["weights_logits"], validate_args=validate_args),
             components=[
                 component._distribution(comp_params, validate_args=validate_args)
-                for component, comp_params in zip(
-                    self.components, distr_params["components"]
-                )
+                for component, comp_params in zip(self.components, distr_params["components"])
             ],
             validate_args=validate_args,
         )

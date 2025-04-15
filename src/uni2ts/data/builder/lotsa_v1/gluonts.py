@@ -54,9 +54,7 @@ def default_prediction_length_from_frequency(freq: str) -> int:
         freq = to_offset(freq).name
         return prediction_length_map[freq]
     except KeyError as err:
-        raise ValueError(
-            f"Cannot obtain default prediction length from frequency `{freq}`."
-        ) from err
+        raise ValueError(f"Cannot obtain default prediction length from frequency `{freq}`.") from err
 
 
 gluonts.dataset.repository._tsf_datasets.default_prediction_length_from_frequency = (
@@ -119,9 +117,7 @@ def generate_forecasting_dataset(
     dataset.save(path_str=str(dataset_path), writer=dataset_writer, overwrite=True)
 
 
-gluonts.dataset.repository._tsf_datasets.generate_forecasting_dataset = (
-    generate_forecasting_dataset
-)
+gluonts.dataset.repository._tsf_datasets.generate_forecasting_dataset = generate_forecasting_dataset
 
 
 additional_datasets = {
@@ -371,10 +367,7 @@ class GluonTSDatasetBuilder(LOTSADatasetBuilder):
         def gen_func() -> Generator[dict[str, Any], None, None]:
             for item in gluonts_dataset:
                 if dataset == "covid_mobility":
-                    if (
-                        len(item["target"]) < 100
-                        or np.isnan(item["target"]).sum() / len(item["target"]) > 0.25
-                    ):
+                    if len(item["target"]) < 100 or np.isnan(item["target"]).sum() / len(item["target"]) > 0.25:
                         continue
                 if len(item["target"]) < 20:
                     continue

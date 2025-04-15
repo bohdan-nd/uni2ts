@@ -44,11 +44,7 @@ def create_data_entry() -> Callable[..., dict[str, FlattenedData]]:
         assert past_feat_dynamic_real_dim is None or past_feat_dynamic_real_dim > 0
 
         data_entry = dict(
-            target=(
-                [np.random.randn(length)]
-                if target_dim == 1
-                else list(np.random.randn(target_dim, length))
-            ),
+            target=([np.random.randn(length)] if target_dim == 1 else list(np.random.randn(target_dim, length))),
             item_id=item_id,
             freq=freq,
             start=np.asarray(np.datetime64("2020-01-01T00:00")),
@@ -80,11 +76,7 @@ def create_example() -> Callable[..., dict[str, ...]]:
         assert past_feat_dynamic_real_dim is None or past_feat_dynamic_real_dim > 0
 
         data_entry = dict(
-            target=(
-                np.random.randn(length)
-                if target_dim == 1
-                else np.random.randn(target_dim, length)
-            ),
+            target=(np.random.randn(length) if target_dim == 1 else np.random.randn(target_dim, length)),
             item_id=item_id,
             freq=freq,
             start=pd.Timestamp(np.datetime64("2020-01-01T00:00")),
@@ -212,9 +204,7 @@ def airpassengers_dataset_builder(
 
 
 @pytest.fixture(scope="session")
-def get_wide_df(
-    tmp_path_factory, request
-) -> Generator[tuple[Path, int, int], None, None]:
+def get_wide_df(tmp_path_factory, request) -> Generator[tuple[Path, int, int], None, None]:
     path = tmp_path_factory.mktemp("wide_df")
     filepath = path / "wide_df.csv"
     num_columns: int = request.param[0]
@@ -222,10 +212,7 @@ def get_wide_df(
 
     df = pd.DataFrame(
         index=np.datetime64("2020-01-01") + np.arange(num_rows),
-        data={
-            col: np.random.randn(num_rows)
-            for col, _ in zip(string.ascii_uppercase, range(num_columns))
-        },
+        data={col: np.random.randn(num_rows) for col, _ in zip(string.ascii_uppercase, range(num_columns))},
     )
     df.to_csv(filepath)
     yield filepath, num_columns, num_rows
@@ -233,24 +220,17 @@ def get_wide_df(
 
 
 @pytest.fixture(scope="session")
-def get_long_df(
-    tmp_path_factory, request
-) -> Generator[tuple[Path, int, int], None, None]:
+def get_long_df(tmp_path_factory, request) -> Generator[tuple[Path, int, int], None, None]:
     path = tmp_path_factory.mktemp("long_df")
     filepath = path / "long_df.csv"
     num_columns: int = request.param[0]
     num_rows: int = request.param[1]
 
     df = pd.DataFrame(
-        index=np.concatenate(
-            [np.datetime64("2020-01-01") + np.arange(num_rows)] * num_columns
-        ),
+        index=np.concatenate([np.datetime64("2020-01-01") + np.arange(num_rows)] * num_columns),
         data={
             "item_id": np.concatenate(
-                [
-                    np.asarray([col] * num_rows)
-                    for col, _ in zip(string.ascii_uppercase, range(num_columns))
-                ]
+                [np.asarray([col] * num_rows) for col, _ in zip(string.ascii_uppercase, range(num_columns))]
             ),
             "target": np.random.randn(num_columns * num_rows),
         },

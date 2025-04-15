@@ -22,18 +22,14 @@ from uni2ts.module.norm import RMSNorm
 
 
 @pytest.mark.parametrize("batch_shape", [tuple(), (1,), (3, 2)])
-@pytest.mark.parametrize(
-    "normalized_shape", [32, (32,), (32, 64), torch.Size([32]), torch.Size([32, 64])]
-)
+@pytest.mark.parametrize("normalized_shape", [32, (32,), (32, 64), torch.Size([32]), torch.Size([32, 64])])
 @pytest.mark.parametrize("weight", [True, False])
 def test_rms_norm(
     batch_shape: tuple[int, ...],
     normalized_shape: int | list[int, ...] | torch.Size,
     weight: bool,
 ):
-    tupled_normalized_shape = (
-        (normalized_shape,) if isinstance(normalized_shape, int) else normalized_shape
-    )
+    tupled_normalized_shape = (normalized_shape,) if isinstance(normalized_shape, int) else normalized_shape
     norm = RMSNorm(normalized_shape, weight=weight)
     x = torch.randn(batch_shape + tupled_normalized_shape)
     x_normed = norm(x)

@@ -56,14 +56,10 @@ class TransformerEncoderLayer(nn.Module):
         centroid: Optional[Float[torch.Tensor, "expert dim"]] = None,
     ) -> Float[torch.Tensor, "*batch time_len dim"]:
         if self.pre_norm:
-            x = x + self._sa_block(
-                self.norm1(x), attn_mask, var_id=var_id, time_id=time_id
-            )
+            x = x + self._sa_block(self.norm1(x), attn_mask, var_id=var_id, time_id=time_id)
             x = x + self.ffn(self.norm2(x), centroid=centroid)
         else:
-            x = self.norm1(
-                x + self._sa_block(x, attn_mask, var_id=var_id, time_id=time_id)
-            )
+            x = self.norm1(x + self._sa_block(x, attn_mask, var_id=var_id, time_id=time_id))
             x = self.norm2(x + self.ffn(x, centroid=centroid))
 
         return x
@@ -105,12 +101,8 @@ class TransformerEncoder(nn.Module):
         use_qk_norm: bool = True,
         var_attn_bias_layer: Optional[Callable[[int, int, int], AttentionBias]] = None,
         time_attn_bias_layer: Optional[Callable[[int, int, int], AttentionBias]] = None,
-        var_qk_proj_layer: Optional[
-            Callable[[int, int, int], QueryKeyProjection]
-        ] = None,
-        time_qk_proj_layer: Optional[
-            Callable[[int, int, int], QueryKeyProjection]
-        ] = None,
+        var_qk_proj_layer: Optional[Callable[[int, int, int], QueryKeyProjection]] = None,
+        time_qk_proj_layer: Optional[Callable[[int, int, int], QueryKeyProjection]] = None,
         shared_var_attn_bias: bool = False,
         shared_time_attn_bias: bool = False,
         shared_var_qk_proj: bool = False,
@@ -136,12 +128,8 @@ class TransformerEncoder(nn.Module):
             time_attn_bias_layer,
             shared_time_attn_bias,
         )
-        var_qk_proj = self.get_layer(
-            d_model, num_heads, num_groups, var_qk_proj_layer, shared_var_qk_proj
-        )
-        time_qk_proj = self.get_layer(
-            d_model, num_heads, num_groups, time_qk_proj_layer, shared_time_qk_proj
-        )
+        var_qk_proj = self.get_layer(d_model, num_heads, num_groups, var_qk_proj_layer, shared_var_qk_proj)
+        time_qk_proj = self.get_layer(d_model, num_heads, num_groups, time_qk_proj_layer, shared_time_qk_proj)
 
         get_self_attn = partial(
             GroupedQueryAttention,
@@ -179,9 +167,7 @@ class TransformerEncoder(nn.Module):
                 bias=False,
                 ffn_dropout_p=dropout_p,
             )
-            self.register_buffer(
-                "centroid", torch.empty(num_layers, 32, d_model, dtype=torch.float64)
-            )
+            self.register_buffer("centroid", torch.empty(num_layers, 32, d_model, dtype=torch.float64))
         get_encoder_layer_norm = partial(norm_layer, d_model)
 
         self.layers = nn.ModuleList(

@@ -27,9 +27,7 @@ from ._mixin import CheckArrNDimMixin, CollectFuncMixin, MapFuncMixin
 
 
 @dataclass
-class SampleDimension(
-    CheckArrNDimMixin, CollectFuncMixin, MapFuncMixin, Transformation
-):
+class SampleDimension(CheckArrNDimMixin, CollectFuncMixin, MapFuncMixin, Transformation):
     max_dim: int
     fields: tuple[str, ...]
     optional_fields: tuple[str, ...] = tuple()
@@ -56,9 +54,7 @@ class SampleDimension(
         self.check_ndim(field, data_entry[field], 2)
         return len(data_entry[field])
 
-    def _process(
-        self, data_entry: dict[str, Any], field: str, total_field_dim: int
-    ) -> list[UnivarTimeSeries]:
+    def _process(self, data_entry: dict[str, Any], field: str, total_field_dim: int) -> list[UnivarTimeSeries]:
         arr: list[UnivarTimeSeries] = data_entry[field]
         rand_idx = np.random.permutation(len(arr))
         field_max_dim = (self.max_dim * len(arr)) // total_field_dim
@@ -74,9 +70,7 @@ class Subsample(Transformation):  # just take every n-th element
         pass
 
 
-class GaussianFilterSubsample(
-    Subsample
-):  # blur using gaussian filter before subsampling
+class GaussianFilterSubsample(Subsample):  # blur using gaussian filter before subsampling
     def __call__(self, data_entry: dict[str, Any]) -> dict[str, Any]:
         # gaussian filter
         return super()(data_entry)

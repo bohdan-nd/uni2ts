@@ -38,9 +38,7 @@ def get_gluonts_val_dataset(
     if prediction_length is None and dataset_name in default_prediction_lengths:
         prediction_length = default_prediction_lengths[dataset_name]
 
-    dataset = get_dataset(
-        dataset_name, prediction_length=prediction_length, regenerate=regenerate
-    )
+    dataset = get_dataset(dataset_name, prediction_length=prediction_length, regenerate=regenerate)
 
     prediction_length = prediction_length or dataset.metadata.prediction_length
     _, test_template = split(dataset.train, offset=-prediction_length)
@@ -67,9 +65,7 @@ def get_gluonts_test_dataset(
     if prediction_length is None and dataset_name in default_prediction_lengths:
         prediction_length = default_prediction_lengths[dataset_name]
 
-    dataset = get_dataset(
-        dataset_name, prediction_length=prediction_length, regenerate=regenerate
-    )
+    dataset = get_dataset(dataset_name, prediction_length=prediction_length, regenerate=regenerate)
 
     prediction_length = prediction_length or dataset.metadata.prediction_length
     _, test_template = split(dataset.test, offset=-prediction_length)
@@ -89,9 +85,7 @@ def get_lsf_val_dataset(
     mode: str = "S",
 ) -> tuple[TestData, MetaData]:
     lsf_dataset = LSFDataset(dataset_name, mode=mode, split="val")
-    dataset = _FileDataset(
-        lsf_dataset, freq=lsf_dataset.freq, one_dim_target=lsf_dataset.target_dim == 1
-    )
+    dataset = _FileDataset(lsf_dataset, freq=lsf_dataset.freq, one_dim_target=lsf_dataset.target_dim == 1)
     _, test_template = split(dataset, offset=-lsf_dataset.length)
     test_data = test_template.generate_instances(
         prediction_length,
@@ -114,9 +108,7 @@ def get_lsf_test_dataset(
     mode: str = "S",
 ) -> tuple[TestData, MetaData]:
     lsf_dataset = LSFDataset(dataset_name, mode=mode, split="test")
-    dataset = _FileDataset(
-        lsf_dataset, freq=lsf_dataset.freq, one_dim_target=lsf_dataset.target_dim == 1
-    )
+    dataset = _FileDataset(lsf_dataset, freq=lsf_dataset.freq, one_dim_target=lsf_dataset.target_dim == 1)
     _, test_template = split(dataset, offset=-lsf_dataset.length)
     test_data = test_template.generate_instances(
         prediction_length,
@@ -142,9 +134,7 @@ def get_custom_eval_dataset(
     mode: None = None,
 ) -> tuple[TestData, MetaData]:
     hf_dataset = HFDataset(dataset_name)
-    dataset = _FileDataset(
-        hf_dataset, freq=hf_dataset.freq, one_dim_target=hf_dataset.target_dim == 1
-    )
+    dataset = _FileDataset(hf_dataset, freq=hf_dataset.freq, one_dim_target=hf_dataset.target_dim == 1)
     _, test_template = split(dataset, offset=offset)
     test_data = test_template.generate_instances(
         prediction_length,

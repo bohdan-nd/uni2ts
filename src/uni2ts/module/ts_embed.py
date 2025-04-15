@@ -27,11 +27,7 @@ from uni2ts.common.torch_util import size_to_mask
 def fs2idx(
     feat_size: Int[torch.Tensor, "*batch"], feat_sizes: Int[torch.Tensor, "num_feats"]
 ) -> Int[torch.Tensor, "*batch"]:
-    return (
-        (rearrange(feat_size, "... -> ... 1") == feat_sizes)
-        .to(torch.long)
-        .argmax(dim=-1)
-    )
+    return (rearrange(feat_size, "... -> ... 1") == feat_sizes).to(torch.long).argmax(dim=-1)
 
 
 class MultiInSizeLinear(nn.Module):
@@ -46,16 +42,10 @@ class MultiInSizeLinear(nn.Module):
         self.in_features_ls = in_features_ls
         self.out_features = out_features
 
-        self.weight = nn.Parameter(
-            torch.empty(
-                (len(in_features_ls), out_features, max(in_features_ls)), dtype=dtype
-            )
-        )
+        self.weight = nn.Parameter(torch.empty((len(in_features_ls), out_features, max(in_features_ls)), dtype=dtype))
 
         if bias:
-            self.bias = nn.Parameter(
-                torch.empty((len(in_features_ls), out_features), dtype=dtype)
-            )
+            self.bias = nn.Parameter(torch.empty((len(in_features_ls), out_features), dtype=dtype))
         else:
             self.register_parameter("bias", None)
 
@@ -80,9 +70,7 @@ class MultiInSizeLinear(nn.Module):
             nn.init.kaiming_uniform_(self.weight[idx, :, :feat_size], a=math.sqrt(5))
             nn.init.zeros_(self.weight[idx, :, feat_size:])
             if self.bias is not None:
-                fan_in, _ = nn.init._calculate_fan_in_and_fan_out(
-                    self.weight[idx, :, :feat_size]
-                )
+                fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight[idx, :, :feat_size])
                 bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
                 nn.init.uniform_(self.bias[idx], -bound, bound)
 
@@ -122,14 +110,10 @@ class FeatLinear(nn.Module):
         self.in_features_ls = in_features_ls
         self.out_features = out_features
 
-        self.weight = nn.Parameter(
-            torch.empty((len(in_features_ls), out_features, out_features), dtype=dtype)
-        )
+        self.weight = nn.Parameter(torch.empty((len(in_features_ls), out_features, out_features), dtype=dtype))
 
         if bias:
-            self.bias = nn.Parameter(
-                torch.empty((len(in_features_ls), out_features), dtype=dtype)
-            )
+            self.bias = nn.Parameter(torch.empty((len(in_features_ls), out_features), dtype=dtype))
         else:
             self.register_parameter("bias", None)
 
@@ -186,16 +170,10 @@ class MultiOutSizeLinear(nn.Module):
         self.out_features_ls = out_features_ls
         self.dim = dim
 
-        self.weight = nn.Parameter(
-            torch.empty(
-                (len(out_features_ls), max(out_features_ls), in_features), dtype=dtype
-            )
-        )
+        self.weight = nn.Parameter(torch.empty((len(out_features_ls), max(out_features_ls), in_features), dtype=dtype))
 
         if bias:
-            self.bias = nn.Parameter(
-                torch.empty((len(out_features_ls), max(out_features_ls)), dtype=dtype)
-            )
+            self.bias = nn.Parameter(torch.empty((len(out_features_ls), max(out_features_ls)), dtype=dtype))
         else:
             self.register_parameter("bias", None)
 
@@ -220,9 +198,7 @@ class MultiOutSizeLinear(nn.Module):
             nn.init.kaiming_uniform_(self.weight[idx, :feat_size], a=math.sqrt(5))
             nn.init.zeros_(self.weight[idx, feat_size:])
             if self.bias is not None:
-                fan_in, _ = nn.init._calculate_fan_in_and_fan_out(
-                    self.weight[idx, :feat_size]
-                )
+                fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight[idx, :feat_size])
                 bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
                 nn.init.uniform_(self.bias[idx, :feat_size], -bound, bound)
                 nn.init.zeros_(self.bias[idx, feat_size:])

@@ -59,26 +59,22 @@ class LOTSADatasetBuilder(DatasetBuilder, abc.ABC):
         :param sample_time_series: how to sample time series from the datasets
         :param storage_path: directory to which data is stored
         """
-        assert all(
-            dataset in self.dataset_list for dataset in datasets
-        ), f"Invalid datasets {set(datasets).difference(self.dataset_list)}, must be one of {self.dataset_list}"
+        assert all(dataset in self.dataset_list for dataset in datasets), (
+            f"Invalid datasets {set(datasets).difference(self.dataset_list)}, must be one of {self.dataset_list}"
+        )
         weight_map = weight_map or dict()
         self.datasets = datasets
         self.weights = [weight_map.get(dataset, 1.0) for dataset in datasets]
         self.sample_time_series = sample_time_series
         self.storage_path = storage_path
 
-    def load_dataset(
-        self, transform_map: dict[str | type, Callable[..., Transformation]]
-    ) -> Dataset:
+    def load_dataset(self, transform_map: dict[str | type, Callable[..., Transformation]]) -> Dataset:
         """
         Loads all datasets in dataset_list
         """
         datasets = [
             self.dataset_load_func_map[dataset](
-                HuggingFaceDatasetIndexer(
-                    load_from_disk(self.storage_path / dataset), uniform=self.uniform
-                ),
+                HuggingFaceDatasetIndexer(load_from_disk(self.storage_path / dataset), uniform=self.uniform),
                 self._get_transform(transform_map, dataset),
                 sample_time_series=self.sample_time_series,
                 dataset_weight=weight,

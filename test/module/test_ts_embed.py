@@ -49,10 +49,7 @@ def test_multi_in_size_linear(
 
     # init ground truth model
     torch.manual_seed(seed)
-    linears = [
-        torch.nn.Linear(in_features, out_features, bias=bias)
-        for in_features in in_features_ls
-    ]
+    linears = [torch.nn.Linear(in_features, out_features, bias=bias) for in_features in in_features_ls]
     packed_x, ps = pack([x], "* max_feat")
     packed_inp_idx, _ = pack([inp_idx], "*")
     linears_out = torch.stack(
@@ -70,9 +67,7 @@ def test_multi_in_size_linear(
     # check
     for idx in range(len(in_features_ls)):
         # check weights
-        assert torch.allclose(
-            embed.weight[idx, :, : in_features_ls[idx]], linears[idx].weight
-        )
+        assert torch.allclose(embed.weight[idx, :, : in_features_ls[idx]], linears[idx].weight)
         assert embed.weight[idx, :, in_features_ls[idx] :].eq(0).all()
         if bias:
             assert torch.allclose(embed.bias[idx], linears[idx].bias)
@@ -85,9 +80,7 @@ def test_multi_in_size_linear(
             )
             assert embed.weight.grad[idx, :, in_features_ls[idx] :].eq(0).all()
             if bias:
-                assert torch.allclose(
-                    embed.bias.grad[idx], linears[idx].bias.grad, atol=1e-6
-                )
+                assert torch.allclose(embed.bias.grad[idx], linears[idx].bias.grad, atol=1e-6)
     # check output
     assert embed_out.shape == linears_out.shape == batch_shape + (out_features,)
     assert not embed_out.isnan().any().item()
@@ -133,10 +126,7 @@ def test_multi_out_size_linear(
 
     # init ground truth model
     torch.manual_seed(seed)
-    linears = [
-        torch.nn.Linear(in_features, out_features, bias=bias)
-        for out_features in out_features_ls
-    ]
+    linears = [torch.nn.Linear(in_features, out_features, bias=bias) for out_features in out_features_ls]
     packed_x, ps = pack([x], "* max_feat")
     packed_inp_idx, _ = pack([inp_idx], "*")
     packed_inp_ofs, _ = pack([inp_ofs], "*")
@@ -160,14 +150,10 @@ def test_multi_out_size_linear(
     # check
     for idx in range(len(out_features_ls)):
         # check weights
-        assert torch.allclose(
-            embed.weight[idx, : out_features_ls[idx]], linears[idx].weight
-        )
+        assert torch.allclose(embed.weight[idx, : out_features_ls[idx]], linears[idx].weight)
         assert embed.weight[idx, out_features_ls[idx] :].eq(0).all()
         if bias:
-            assert torch.allclose(
-                embed.bias[idx, : out_features_ls[idx]], linears[idx].bias
-            )
+            assert torch.allclose(embed.bias[idx, : out_features_ls[idx]], linears[idx].bias)
             assert embed.bias[idx, out_features_ls[idx] :].eq(0).all()
         # check grads
         if idx in inp_idx:

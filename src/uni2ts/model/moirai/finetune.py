@@ -103,12 +103,12 @@ class MoiraiFinetune(L.LightningModule):
         weight_decay: float = 1e-2,
         log_on_step: bool = False,
     ):
-        assert (module is not None) or (
-            module_kwargs is not None
-        ), "if module is not provided, module_kwargs is required"
-        assert (
-            num_warmup_steps <= num_training_steps
-        ), f"num_warmup_steps ({num_warmup_steps}) should be <= num_training_steps ({num_training_steps})."
+        assert (module is not None) or (module_kwargs is not None), (
+            "if module is not provided, module_kwargs is required"
+        )
+        assert num_warmup_steps <= num_training_steps, (
+            f"num_warmup_steps ({num_warmup_steps}) should be <= num_training_steps ({num_training_steps})."
+        )
         super().__init__()
         self.save_hyperparameters(ignore=["module"])
         self.module = MoiraiModule(**module_kwargs) if module is None else module
@@ -134,12 +134,8 @@ class MoiraiFinetune(L.LightningModule):
         )
         return distr
 
-    def training_step(
-        self, batch: dict[str, torch.Tensor], batch_idx: int
-    ) -> torch.Tensor:
-        distr = self(
-            **{field: batch[field] for field in list(self.seq_fields) + ["sample_id"]}
-        )
+    def training_step(self, batch: dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
+        distr = self(**{field: batch[field] for field in list(self.seq_fields) + ["sample_id"]})
         loss = self.hparams.loss_func(
             pred=distr,
             **{
@@ -153,9 +149,7 @@ class MoiraiFinetune(L.LightningModule):
                 ]
             },
         )
-        batch_size = (
-            batch["sample_id"].max(dim=1).values.sum() if "sample_id" in batch else None
-        )
+        batch_size = batch["sample_id"].max(dim=1).values.sum() if "sample_id" in batch else None
         self.log(
             f"train/{self.hparams.loss_func.__class__.__name__}",
             loss,
@@ -169,12 +163,8 @@ class MoiraiFinetune(L.LightningModule):
         )
         return loss
 
-    def validation_step(
-        self, batch: dict[str, torch.Tensor], batch_idx: int, dataloader_idx: int = 0
-    ) -> torch.Tensor:
-        distr = self(
-            **{field: batch[field] for field in list(self.seq_fields) + ["sample_id"]}
-        )
+    def validation_step(self, batch: dict[str, torch.Tensor], batch_idx: int, dataloader_idx: int = 0) -> torch.Tensor:
+        distr = self(**{field: batch[field] for field in list(self.seq_fields) + ["sample_id"]})
         val_loss = self.hparams.loss_func(
             pred=distr,
             **{
@@ -188,9 +178,7 @@ class MoiraiFinetune(L.LightningModule):
                 ]
             },
         )
-        batch_size = (
-            batch["sample_id"].max(dim=1).values.sum() if "sample_id" in batch else None
-        )
+        batch_size = batch["sample_id"].max(dim=1).values.sum() if "sample_id" in batch else None
         self.log(
             f"val/{self.hparams.loss_func.__class__.__name__}",
             val_loss,
@@ -205,9 +193,7 @@ class MoiraiFinetune(L.LightningModule):
 
         if self.hparams.val_metric is not None:
             val_metrics = (
-                self.hparams.val_metric
-                if isinstance(self.hparams.val_metric, list)
-                else [self.hparams.val_metric]
+                self.hparams.val_metric if isinstance(self.hparams.val_metric, list) else [self.hparams.val_metric]
             )
             for metric_func in val_metrics:
                 if isinstance(metric_func, PackedPointLoss):
@@ -281,12 +267,10 @@ class MoiraiFinetune(L.LightningModule):
         param_dict = {pn: p for pn, p in self.named_parameters() if p.requires_grad}
         inter_params = decay & no_decay
         union_params = decay | no_decay
-        assert (
-            len(inter_params) == 0
-        ), f"parameters {str(inter_params)} made it into both decay/no_decay sets!"
-        assert (
-            len(param_dict.keys() - union_params) == 0
-        ), f"parameters {str(param_dict.keys() - union_params)} were not separated into either decay/no_decay set!"
+        assert len(inter_params) == 0, f"parameters {str(inter_params)} made it into both decay/no_decay sets!"
+        assert len(param_dict.keys() - union_params) == 0, (
+            f"parameters {str(param_dict.keys() - union_params)} were not separated into either decay/no_decay set!"
+        )
 
         optim_groups = [
             {

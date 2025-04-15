@@ -42,11 +42,7 @@ def _get_subseasonal_precip_gen_func() -> tuple[GenFunc, Features]:
 
     def gen_func() -> Generator[dict[str, Any], None, None]:
         for lat, lon in lat_lon:
-            lat_lon_precip = (
-                precip.query(f"lat == {lat} and lon == {lon}")
-                .set_index("start_date")
-                .sort_index()
-            )
+            lat_lon_precip = precip.query(f"lat == {lat} and lon == {lon}").set_index("start_date").sort_index()
             yield dict(
                 item_id=f"{lat}_{lon}",
                 start=lat_lon_precip.index[0],
@@ -76,26 +72,10 @@ def _get_subseasonal_gen_func() -> tuple[GenFunc, Features]:
 
     def gen_func() -> Generator[dict[str, Any], None, None]:
         for lat, lon in lat_lon:
-            lat_lon_precip = (
-                precip.query(f"lat == {lat} and lon == {lon}")
-                .set_index("start_date")
-                .sort_index()
-            )
-            lat_lon_tmp2m = (
-                tmp2m.query(f"lat == {lat} and lon == {lon}")
-                .set_index("start_date")
-                .sort_index()
-            )
-            lat_lon_tmin = (
-                tmin.query(f"lat == {lat} and lon == {lon}")
-                .set_index("start_date")
-                .sort_index()
-            )
-            lat_lon_tmax = (
-                tmax.query(f"lat == {lat} and lon == {lon}")
-                .set_index("start_date")
-                .sort_index()
-            )
+            lat_lon_precip = precip.query(f"lat == {lat} and lon == {lon}").set_index("start_date").sort_index()
+            lat_lon_tmp2m = tmp2m.query(f"lat == {lat} and lon == {lon}").set_index("start_date").sort_index()
+            lat_lon_tmin = tmin.query(f"lat == {lat} and lon == {lon}").set_index("start_date").sort_index()
+            lat_lon_tmax = tmax.query(f"lat == {lat} and lon == {lon}").set_index("start_date").sort_index()
 
             yield dict(
                 item_id=f"{lat}_{lon}",
@@ -131,9 +111,7 @@ class SubseasonalDatasetBuilder(LOTSADatasetBuilder):
     ]
     dataset_type_map = defaultdict(lambda: MultiSampleTimeSeriesDataset)
     dataset_load_func_map = defaultdict(
-        lambda: partial(
-            MultiSampleTimeSeriesDataset, max_ts=128, combine_fields=("target",)
-        )
+        lambda: partial(MultiSampleTimeSeriesDataset, max_ts=128, combine_fields=("target",))
     )
 
     def build_dataset(self, dataset: str):

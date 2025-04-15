@@ -43,10 +43,7 @@ def test_create_data_entry(
     else:
         assert isinstance(data_entry["past_feat_dynamic_real"], list)
         assert len(data_entry["past_feat_dynamic_real"]) == past_feat_dynamic_real_dim
-        assert all(
-            isinstance(ts, UnivarTimeSeries)
-            for ts in data_entry["past_feat_dynamic_real"]
-        )
+        assert all(isinstance(ts, UnivarTimeSeries) for ts in data_entry["past_feat_dynamic_real"])
         assert all(len(ts) == length for ts in data_entry["past_feat_dynamic_real"])
 
 
@@ -69,9 +66,5 @@ def test_create_example(
     if past_feat_dynamic_real_dim is None:
         assert "past_feat_dynamic_real" not in data_entry
     else:
-        feat_shape = (
-            (length,)
-            if past_feat_dynamic_real_dim == 1
-            else (past_feat_dynamic_real_dim, length)
-        )
+        feat_shape = (length,) if past_feat_dynamic_real_dim == 1 else (past_feat_dynamic_real_dim, length)
         assert data_entry["past_feat_dynamic_real"].shape == feat_shape

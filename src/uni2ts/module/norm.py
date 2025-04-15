@@ -44,16 +44,10 @@ class RMSNorm(nn.Module):
     def forward(
         self, x: Float[torch.Tensor, "*batch normalized_shape"]
     ) -> Float[torch.Tensor, "*batch normalized_shape"]:
-        output = x * torch.rsqrt(
-            x.pow(2).mean(dim=self.mean_dim, keepdim=True) + self.eps
-        )
+        output = x * torch.rsqrt(x.pow(2).mean(dim=self.mean_dim, keepdim=True) + self.eps)
         if self.weight is not None:
             return output * self.weight
         return output
 
     def extra_repr(self) -> str:
-        return (
-            f"normalized_shape={self.normalized_shape}, "
-            f"eps={self.eps}, "
-            f"weight={self.weight is not None}"
-        )
+        return f"normalized_shape={self.normalized_shape}, eps={self.eps}, weight={self.weight is not None}"

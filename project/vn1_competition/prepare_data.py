@@ -32,11 +32,7 @@ def get_data(file_path1, file_path2):
     df_sales_1 = pd.read_csv(file_path2)
     df_sales = pd.concat([df_sales_0, df_sales_1.iloc[:, 3:]], axis=1)
     df_sales["item_id"] = (
-        df_sales["Client"].astype(str)
-        + "-"
-        + df_sales["Warehouse"].astype(str)
-        + "-"
-        + df_sales["Product"].astype(str)
+        df_sales["Client"].astype(str) + "-" + df_sales["Warehouse"].astype(str) + "-" + df_sales["Product"].astype(str)
     )
     df_sales.drop(columns=["Client", "Warehouse", "Product"], inplace=True)
     cols = ["item_id"] + [col for col in df_sales.columns if col != "item_id"]
@@ -71,9 +67,7 @@ features = Features(
     )
 )
 
-train_dataset = datasets.Dataset.from_generator(
-    train_example_gen_func, features=features
-)
+train_dataset = datasets.Dataset.from_generator(train_example_gen_func, features=features)
 val_dataset = datasets.Dataset.from_generator(val_example_gen_func, features=features)
 train_dataset_path = os.path.join(current_dir, "train_dataset")
 val_dataset_path = os.path.join(current_dir, "val_dataset")

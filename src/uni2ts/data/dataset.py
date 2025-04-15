@@ -81,9 +81,7 @@ class TimeSeriesDataset(Dataset):
         :return: transformed time series data
         """
         if idx < 0 or idx >= len(self):
-            raise IndexError(
-                f"Index {idx} out of range for dataset of length {len(self)}"
-            )
+            raise IndexError(f"Index {idx} out of range for dataset of length {len(self)}")
 
         if self.sample_time_series != SampleTimeSeriesType.NONE:
             idx = np.random.choice(len(self.probabilities), p=self.probabilities)
@@ -115,11 +113,7 @@ class TimeSeriesDataset(Dataset):
         Convert time series type data into a list of univariate time series
         """
         return {
-            k: (
-                [v]
-                if isinstance(v, UnivarTimeSeries)
-                else list(v) if isinstance(v, MultivarTimeSeries) else v
-            )
+            k: ([v] if isinstance(v, UnivarTimeSeries) else list(v) if isinstance(v, MultivarTimeSeries) else v)
             for k, v in data.items()
         }
 
@@ -161,24 +155,18 @@ class MultiSampleTimeSeriesDataset(TimeSeriesDataset):
         samples = self.indexer[np.concatenate([[idx], others])]
         return samples
 
-    def _flatten_data(
-        self, samples: dict[str, BatchedData]
-    ) -> dict[str, FlattenedData]:
+    def _flatten_data(self, samples: dict[str, BatchedData]) -> dict[str, FlattenedData]:
         for field in samples.keys():
             if field in self.combine_fields:
                 item = samples[field]
                 if isinstance(item, list) and isinstance(item[0], MultivarTimeSeries):
-                    samples[field] = [
-                        univar for sample in samples[field] for univar in sample
-                    ]
+                    samples[field] = [univar for sample in samples[field] for univar in sample]
             elif isinstance(samples[field], BatchedDateTime):
                 samples[field] = np.asarray(samples[field][0])
             elif isinstance(samples[field], BatchedString):
                 samples[field] = samples[field][0]
             else:
-                raise AssertionError(
-                    f"Field {field} not accounted for in {self.indexer} MultiSampleTimeSeriesDataset"
-                )
+                raise AssertionError(f"Field {field} not accounted for in {self.indexer} MultiSampleTimeSeriesDataset")
         return samples
 
 

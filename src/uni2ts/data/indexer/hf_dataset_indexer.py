@@ -20,7 +20,7 @@ import numpy as np
 import pyarrow as pa
 import pyarrow.compute as pc
 from datasets import Dataset
-from datasets.features import Sequence, LargeList
+from datasets.features import Sequence
 from datasets.formatting import query_table
 
 from uni2ts.common.typing import BatchedData, Data, MultivarTimeSeries, UnivarTimeSeries
@@ -33,36 +33,17 @@ class HuggingFaceDatasetIndexer(Indexer):
     Indexer for Hugging Face Datasets
     """
 
-    def __init__(self, dataset: Dataset, uniform: bool = False, non_null_counter_column_name: Optional[str] = None):
+    def __init__(self, dataset: Dataset, uniform: bool = False):
         """
         :param dataset: underlying Hugging Face Dataset
         :param uniform: whether the underlying data has uniform length
         """
         super().__init__(uniform=uniform)
         self.dataset = dataset
-        self.non_null_counter_column_name = non_null_counter_column_name
         self.features = dict(self.dataset.features)
-        self.non_seq_cols = [
-            name
-            for name, feat in self.features.items()
-            if not isinstance(feat, Sequence)
-        ]
-        
-        self.seq_cols = [
-            name for name, feat in self.features.items() if isinstance(feat, Sequence)
-        ]
-        
-        # Polars does not support 2D arrays or nested lists, so we explicitly use LargeList to annotate time series to manually reshape them in _pa_column_to_numpy (The original repo does not use LargeList)
-        # We kept 'Sequence' for backward compatibility and non-Polars datasets
-        large_list_cols = [
-            name for name, feat in self.features.items() if isinstance(feat, LargeList)
-        ]
-        
-        self.seq_cols.extend(large_list_cols)
-        
-        if not self.non_null_counter_column_name and large_list_cols:
-            raise ValueError("Large List DS marks the flatten data obtained from Polars, thus non_null_counter_column_name can not be None")
-        
+        self.non_seq_cols = [name for name, feat in self.features.items() if not isinstance(feat, Sequence)]
+
+        self.seq_cols = [name for name, feat in self.features.items() if isinstance(feat, Sequence)]
         self.dataset.set_format("numpy", columns=self.non_seq_cols)
 
     def __len__(self) -> int:
@@ -71,25 +52,19 @@ class HuggingFaceDatasetIndexer(Indexer):
     def _getitem_int(self, idx: int) -> dict[str, Data]:
         non_seqs = self.dataset[idx]
         pa_subtable = query_table(self.dataset.data, idx, indices=self.dataset._indices)
-        seqs = {
-            col: self._pa_column_to_numpy(pa_subtable, col)[0] for col in self.seq_cols
-        }
+        seqs = {col: self._pa_column_to_numpy(pa_subtable, col)[0] for col in self.seq_cols}
         return non_seqs | seqs
 
     def _getitem_iterable(self, idx: Iterable[int]) -> dict[str, BatchedData]:
         non_seqs = self.dataset[idx]
         pa_subtable = query_table(self.dataset.data, idx, indices=self.dataset._indices)
-        seqs = {
-            col: self._pa_column_to_numpy(pa_subtable, col) for col in self.seq_cols
-        }
+        seqs = {col: self._pa_column_to_numpy(pa_subtable, col) for col in self.seq_cols}
         return non_seqs | seqs
 
     def _getitem_slice(self, idx: slice) -> dict[str, BatchedData]:
         non_seqs = self.dataset[idx]
         pa_subtable = query_table(self.dataset.data, idx, indices=self.dataset._indices)
-        seqs = {
-            col: self._pa_column_to_numpy(pa_subtable, col) for col in self.seq_cols
-        }
+        seqs = {col: self._pa_column_to_numpy(pa_subtable, col) for col in self.seq_cols}
         return non_seqs | seqs
 
     def _pa_column_to_numpy(
@@ -105,34 +80,16 @@ class HuggingFaceDatasetIndexer(Indexer):
                     for chunk in pa_array.chunks
                     for i in range(len(chunk))
                     if (flat_slice := chunk.slice(i, 1).flatten())
-                    and (
-                        feat_length := (
-                            feature.length if feature.length != -1 else len(flat_slice)
-                        )
-                    )
-                ]
-                
-            # TimeSeries marked as LargeList represent 2D arrays from Polars that must be reshaped manually using the assosiated 'non_null_counter' to recover original structure
-            elif isinstance(feature.feature, LargeList):
-                non_null_counter_array = pa_table.column(column_name)
-                
-                array = [
-                    chunk.slice(i, 1).flatten().to_numpy(False).reshape(non_null_counter_array[i].as_py(), -1)
-                    for chunk in pa_array.chunks
-                    for i in range(len(chunk))
+                    and (feat_length := (feature.length if feature.length != -1 else len(flat_slice)))
                 ]
             else:
                 array = [
-                    chunk.slice(i, 1).flatten().to_numpy(False)
-                    for chunk in pa_array.chunks
-                    for i in range(len(chunk))
+                    chunk.slice(i, 1).flatten().to_numpy(False) for chunk in pa_array.chunks for i in range(len(chunk))
                 ]
         elif isinstance(pa_array, pa.ListArray):
             if isinstance(feature.feature, Sequence):
                 flat_slice = pa_array.flatten()
-                feat_length = (
-                    feature.length if feature.length != -1 else len(flat_slice)
-                )
+                feat_length = feature.length if feature.length != -1 else len(flat_slice)
                 array = [flat_slice.flatten().to_numpy(False).reshape(feat_length, -1)]
             else:
                 array = [pa_array.flatten().to_numpy(False)]
@@ -154,9 +111,138 @@ class HuggingFaceDatasetIndexer(Indexer):
             return self.get_uniform_probabilities()
 
         if self[0]["target"].ndim > 1:
-            lengths = pc.list_value_length(
-                pc.list_flatten(pc.list_slice(self.dataset.data.column(field), 0, 1))
-            )
+            lengths = pc.list_value_length(pc.list_flatten(pc.list_slice(self.dataset.data.column(field), 0, 1)))
+        else:
+            lengths = pc.list_value_length(self.dataset.data.column(field))
+        lengths = lengths.to_numpy()
+        probs = lengths / lengths.sum()
+        return probs
+
+
+class TensorHuggingFaceDatasetIndexer(Indexer):
+    """
+    Indexer for Hugging Face Datasets
+    """
+
+    def __init__(self, dataset: Dataset, uniform: bool = False, tensor_key: str = "target"):
+        """
+        :param dataset: underlying Hugging Face Dataset
+        :param uniform: whether the underlying data has uniform length
+        """
+        super().__init__(uniform=uniform)
+        self.dataset = dataset
+        self.features = dict(self.dataset.features)
+        self.tensor_key = tensor_key
+        self.non_seq_cols = [name for name, feat in self.features.items() if not isinstance(feat, Sequence)]
+
+        self.seq_cols = [name for name, feat in self.features.items() if isinstance(feat, Sequence)]
+        
+        self.dataset.set_format("numpy", columns=self.non_seq_cols)
+
+    def __len__(self) -> int:
+        return len(self.dataset)
+
+    def _getitem_int(self, idx: int) -> dict[str, Data]:
+        non_seqs = self.dataset[idx]
+        pa_subtable = query_table(self.dataset.data, idx, indices=self.dataset._indices)
+        sequences = [self._pa_column_to_numpy(pa_subtable, col)[0] for col in self.seq_cols]
+        
+        data = np.concatenate(sequences, axis = 1) # [length, features]
+        data = data.T # [features, length]
+        
+        seqs = {self.tensor_key: data}
+        
+        return non_seqs | seqs
+
+    def _getitem_iterable(self, idx: Iterable[int]) -> dict[str, BatchedData]:
+        non_seqs = self.dataset[idx]
+        pa_subtable = query_table(self.dataset.data, idx, indices=self.dataset._indices)
+        sequences = [self._pa_column_to_numpy(pa_subtable, col) for col in self.seq_cols]
+        
+        data = []
+        
+        for row_index in range(len(sequences[0])):
+            row_list = []
+            
+            for col_index in range(len(sequences)):
+                row_list.append(sequences[col_index][row_index])
+            
+            row_tensor = np.concatenate(row_list, axis = 1)
+            row_tensor = row_tensor.T
+            
+            data.append(row_tensor)
+            
+        seqs = {self.tensor_key: data}
+        
+        return non_seqs | seqs
+
+    def _getitem_slice(self, idx: slice) -> dict[str, BatchedData]:
+        non_seqs = self.dataset[idx]
+        pa_subtable = query_table(self.dataset.data, idx, indices=self.dataset._indices)
+        sequences = [self._pa_column_to_numpy(pa_subtable, col) for col in self.seq_cols]
+        
+        data = []
+        
+        for row_index in range(len(sequences[0])):
+            row_list = []
+            
+            for col_index in range(len(sequences)):
+                row_list.append(sequences[col_index][row_index])
+            
+            row_tensor = np.concatenate(row_list, axis = 1)
+            row_tensor = row_tensor.T
+            
+            data.append(row_tensor)
+            
+        seqs = {self.tensor_key: data}
+        
+        return non_seqs | seqs
+
+    def _pa_column_to_numpy(
+        self, pa_table: pa.Table, column_name: str
+    ) -> list[UnivarTimeSeries] | list[MultivarTimeSeries]:
+        pa_array: pa.Array = pa_table.column(column_name)
+        feature = self.features[column_name]
+
+        if isinstance(pa_array, pa.ChunkedArray):
+            if isinstance(feature.feature, Sequence):
+                array = [
+                    flat_slice.flatten().to_numpy(False).reshape(feat_length, -1)
+                    for chunk in pa_array.chunks
+                    for i in range(len(chunk))
+                    if (flat_slice := chunk.slice(i, 1).flatten())
+                    and (feat_length := (feature.length if feature.length != -1 else len(flat_slice)))
+                ]
+            else:
+                array = [
+                    chunk.slice(i, 1).flatten().to_numpy(False) for chunk in pa_array.chunks for i in range(len(chunk))
+                ]
+        elif isinstance(pa_array, pa.ListArray):
+            if isinstance(feature.feature, Sequence):
+                flat_slice = pa_array.flatten()
+                feat_length = feature.length if feature.length != -1 else len(flat_slice)
+                array = [flat_slice.flatten().to_numpy(False).reshape(feat_length, -1)]
+            else:
+                array = [pa_array.flatten().to_numpy(False)]
+        else:
+            raise NotImplementedError
+
+        return array
+
+    def get_proportional_probabilities(self, field: str = "target") -> np.ndarray:
+        """
+        Obtain proportion of each time series based on number of time steps.
+        Leverages pyarrow.compute for fast implementation.
+
+        :param field: field name to measure time series length
+        :return: proportional probabilities
+        """
+
+        if self.uniform:
+            return self.get_uniform_probabilities()
+
+        if self[0]["target"].ndim > 1:
+            lengths = pc.list_value_length(pc.list_flatten(pc.list_slice(self.dataset.data.column(field), 0, 1)))
         else:
             lengths = pc.list_value_length(self.dataset.data.column(field))
         lengths = lengths.to_numpy()

@@ -34,9 +34,7 @@ def test_samplers_support(distribution: str, val: int):
     )
 
 
-def check_pmf(
-    sampler: Sampler, pmf_fn: partial[np.ndarray], val: int, num_samples: int = 2000000
-):
+def check_pmf(sampler: Sampler, pmf_fn: partial[np.ndarray], val: int, num_samples: int = 2000000):
     support = np.arange(val)
 
     # get sampler's empirical pmf

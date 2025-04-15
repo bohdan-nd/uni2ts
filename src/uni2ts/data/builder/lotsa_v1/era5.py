@@ -68,13 +68,9 @@ class ERA5DatasetBuilder(LOTSADatasetBuilder):
             for var in ERA5_VARIABLES:
                 all_vars[var].append(np_file[var][:, 0, :, :])
 
-        targets = np.stack(
-            [np.concatenate(all_vars[var]) for var in ERA5_VARIABLES], axis=0
-        )
+        targets = np.stack([np.concatenate(all_vars[var]) for var in ERA5_VARIABLES], axis=0)
 
-        def gen_func(
-            jobs: list[tuple[int, int]]
-        ) -> Generator[dict[str, Any], None, None]:
+        def gen_func(jobs: list[tuple[int, int]]) -> Generator[dict[str, Any], None, None]:
             for x, y in jobs:
                 yield dict(
                     item_id=f"{year}_{x}_{y}",
@@ -90,9 +86,7 @@ class ERA5DatasetBuilder(LOTSADatasetBuilder):
                     item_id=Value("string"),
                     start=Value("timestamp[s]"),
                     freq=Value("string"),
-                    target=Sequence(
-                        Sequence(Value("float32")), length=len(ERA5_VARIABLES)
-                    ),
+                    target=Sequence(Sequence(Value("float32")), length=len(ERA5_VARIABLES)),
                 )
             ),
             gen_kwargs=dict(jobs=all_jobs),

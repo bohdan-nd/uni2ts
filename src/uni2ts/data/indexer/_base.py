@@ -48,13 +48,9 @@ class Indexer(abc.ABC, Sequence):
                 raise IndexError(f"Index {idx} out of bounds for length {len(self)}")
         elif isinstance(idx, slice):
             if idx.start is not None and idx.start < 0:
-                raise IndexError(
-                    f"Index {idx.start} out of bounds for length {len(self)}"
-                )
+                raise IndexError(f"Index {idx.start} out of bounds for length {len(self)}")
             if idx.stop is not None and idx.stop >= len(self):
-                raise IndexError(
-                    f"Index {idx.stop} out of bounds for length {len(self)}"
-                )
+                raise IndexError(f"Index {idx.stop} out of bounds for length {len(self)}")
         elif isinstance(idx, Iterable):
             idx = np.fromiter(idx, np.int64)
             if np.logical_or(idx < 0, idx >= len(self)).any():
@@ -62,9 +58,7 @@ class Indexer(abc.ABC, Sequence):
         else:
             raise NotImplementedError(f"Unable to index on type: {type(idx)}")
 
-    def __getitem__(
-        self, idx: int | slice | Iterable[int]
-    ) -> dict[str, Data | BatchedData]:
+    def __getitem__(self, idx: int | slice | Iterable[int]) -> dict[str, Data | BatchedData]:
         """
         Retrive the data from the underlying storage in dictionary format.
 

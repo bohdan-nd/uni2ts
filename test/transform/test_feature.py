@@ -44,9 +44,7 @@ def test_add_variate_index(
     collection_type: type,
 ):
     if max_dim < sum([dim for dim, _ in (field_map | optional_map).values()]):
-        expectation = pytest.raises(
-            ValueError, match=r"Variate \(\d+\) exceeds maximum variate (\d+)."
-        )
+        expectation = pytest.raises(ValueError, match=r"Variate \(\d+\) exceeds maximum variate (\d+).")
     else:
         expectation = does_not_raise()
     with expectation:
@@ -71,9 +69,7 @@ def test_add_variate_index(
         variate_ids = set()
         if collection_type == list:
             assert len(output) == len(field_map) + len(optional_map)
-            for dim_id, (field, (dim, length)) in zip(
-                output, (field_map | optional_map).items()
-            ):
+            for dim_id, (field, (dim, length)) in zip(output, (field_map | optional_map).items()):
                 assert dim_id.shape[0] == dim
                 assert dim_id.shape[1] == length
                 for d in range(dim):
@@ -128,9 +124,7 @@ def test_add_time_index(
     output = transformed_data_entry["time_id"]
     if collection_type == list:
         assert len(output) == len(field_map) + len(optional_map)
-        for seq_id, (field, (dim, length)) in zip(
-            output, (field_map | optional_map).items()
-        ):
+        for seq_id, (field, (dim, length)) in zip(output, (field_map | optional_map).items()):
             assert seq_id.shape[0] == dim
             assert seq_id.shape[1] == length
             for d in range(dim):
@@ -177,9 +171,7 @@ def test_add_observed_mask(
     output = transformed_data_entry["observed_mask"]
     if collection_type == list:
         assert len(output) == len(field_map) + len(optional_map)
-        for mask, (field, (dim, length)) in zip(
-            output, (field_map | optional_map).items()
-        ):
+        for mask, (field, (dim, length)) in zip(output, (field_map | optional_map).items()):
             assert mask.shape[0] == dim
             assert mask.shape[1] == length
             assert np.all(mask == ~nans[field])

@@ -44,9 +44,7 @@ from uni2ts.transform import DummyValueImputation, ImputeTimeSeries, LastValueIm
     "fields",
     [("target",), ("past_feat_dynamic_real",), ("target", "past_feat_dynamic_real")],
 )
-def test_dummy_value_imputation(
-    x: np.ndarray, y: np.ndarray, value: int | float, fields: tuple[str, ...]
-):
+def test_dummy_value_imputation(x: np.ndarray, y: np.ndarray, value: int | float, fields: tuple[str, ...]):
     # should be (time, dim)
     x = x.T
     y = y.T
@@ -86,9 +84,7 @@ def test_dummy_value_imputation(
     "fields",
     [("target",), ("past_feat_dynamic_real",), ("target", "past_feat_dynamic_real")],
 )
-def test_last_value_imputation(
-    x: np.ndarray, y: np.ndarray, value: int | float, fields: tuple[str, ...]
-):
+def test_last_value_imputation(x: np.ndarray, y: np.ndarray, value: int | float, fields: tuple[str, ...]):
     transform = ImputeTimeSeries(
         imputation_method=LastValueImputation(value=value),
         fields=fields,

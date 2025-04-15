@@ -43,17 +43,13 @@ def pack_seq(
     for i in range(len(batch)):
         curr_len = sum([b.shape[0] for b in batch[i]])
         if curr_len < max_seq_len:
-            batch[i].append(
-                pad_fn(max_seq_len - curr_len, *shape, dtype=batch[i][0].dtype)
-            )
+            batch[i].append(pad_fn(max_seq_len - curr_len, *shape, dtype=batch[i][0].dtype))
 
     return torch.stack([torch.cat(x, dim=0) for x in batch], dim=0)
 
 
 def _test_packed_scaler(
-    get_loc_scale_func: Callable[
-        [torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]
-    ],
+    get_loc_scale_func: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
     packed_scaler: PackedScaler,
     samples: list[tuple[int, int, int, int, int]],
     max_seq_len: int,
@@ -99,16 +95,10 @@ def _test_packed_scaler(
 
         dimension_id = repeat(torch.arange(dim), "d -> (d t)", t=time)
 
-        _target_loc, _target_scale = get_loc_scale_func(
-            _target, _observed[-n_target_time:, :target_dim]
-        )
+        _target_loc, _target_scale = get_loc_scale_func(_target, _observed[-n_target_time:, :target_dim])
         _cov_loc, _cov_scale = get_loc_scale_func(_cov, _observed[:, target_dim:])
-        loc = repeat(
-            torch.cat([_target_loc, _cov_loc], dim=1), "1 d -> (d t) 1", t=time
-        )
-        scale = repeat(
-            torch.cat([_target_scale, _cov_scale], dim=1), "1 d -> (d t) 1", t=time
-        )
+        loc = repeat(torch.cat([_target_loc, _cov_loc], dim=1), "1 d -> (d t) 1", t=time)
+        scale = repeat(torch.cat([_target_scale, _cov_scale], dim=1), "1 d -> (d t) 1", t=time)
 
         data["target"].append(target)
         data["observed_mask"].append(observed_mask)
@@ -179,9 +169,7 @@ def test_packed_nop_scaler(
     observed_pct: float,
     seed: int,
 ):
-    def get_loc_scale_func(
-        _target: torch.Tensor, _observed: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def get_loc_scale_func(_target: torch.Tensor, _observed: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         dim = _target.shape[1]
         return torch.zeros(1, dim), torch.ones(1, dim)
 
@@ -206,9 +194,7 @@ def test_packed_std_scaler(
     observed_pct: float,
     seed: int,
 ):
-    def get_loc_scale_func(
-        _target: torch.Tensor, _observed: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def get_loc_scale_func(_target: torch.Tensor, _observed: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         _target = _target * _observed
         loc = safe_div(
             _target.sum(dim=(0, -1), keepdim=True),
@@ -243,9 +229,7 @@ def test_packed_abs_mean_scaler(
     observed_pct: float,
     seed: int,
 ):
-    def get_loc_scale_func(
-        _target: torch.Tensor, _observed: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def get_loc_scale_func(_target: torch.Tensor, _observed: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         dim = _target.shape[1]
         _target = _target * _observed
         # loc = safe_div(

@@ -48,11 +48,7 @@ def _load_metr_la(dataset_name, prediction_length: Optional[int] = None):
 
 
 def _load_walmart(dataset_name: str, prediction_length: Optional[int] = None):
-    df = pd.read_csv(
-        os.path.join(
-            env.LSF_PATH, "walmart-recruiting-store-sales-forecasting/train.csv"
-        )
-    )
+    df = pd.read_csv(os.path.join(env.LSF_PATH, "walmart-recruiting-store-sales-forecasting/train.csv"))
 
     data = []
     for id, row in df[["Store", "Dept"]].drop_duplicates().iterrows():
@@ -85,9 +81,7 @@ def _load_jena_weather(dataset_name: str, prediction_length: Optional[int] = Non
 
 
 def _load_istanbul_traffic(dataset_name: str, prediction_length: Optional[int] = None):
-    df = pd.read_csv(
-        os.path.join(env.LSF_PATH, "istanbul-traffic-index/istanbul_traffic.csv")
-    )
+    df = pd.read_csv(os.path.join(env.LSF_PATH, "istanbul-traffic-index/istanbul_traffic.csv"))
     df.datetime = pd.to_datetime(df.datetime)
     df = df.set_index("datetime")
     df = df.resample("h").mean()
@@ -138,9 +132,7 @@ def generate_pf_dataset(
     prediction_length: Optional[int] = None,
 ):
     load_func = pf_load_func_map[dataset_name]
-    data, start, freq, prediction_length, rolling_evaluations = load_func(
-        dataset_name, prediction_length
-    )
+    data, start, freq, prediction_length, rolling_evaluations = load_func(dataset_name, prediction_length)
 
     train_ts = []
     for cat in range(data.shape[-1]):
@@ -169,9 +161,7 @@ def generate_pf_dataset(
 
     meta = MetaData(
         freq=freq,
-        feat_static_cat=[
-            CategoricalFeatureInfo(name="feat_static_cat_0", cardinality=data.shape[-1])
-        ],
+        feat_static_cat=[CategoricalFeatureInfo(name="feat_static_cat_0", cardinality=data.shape[-1])],
         prediction_length=prediction_length,
     )
     dataset = TrainDatasets(metadata=meta, train=train_ts, test=test_ts)

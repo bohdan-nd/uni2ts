@@ -53,17 +53,13 @@ def pack_seq(
     for i in range(len(batch)):
         curr_len = sum([b.shape[0] for b in batch[i]])
         if curr_len < max_seq_len:
-            batch[i].append(
-                torch.zeros(max_seq_len - curr_len, *shape, dtype=batch[i][0].dtype)
-            )
+            batch[i].append(torch.zeros(max_seq_len - curr_len, *shape, dtype=batch[i][0].dtype))
 
     return torch.stack([torch.cat(x, dim=0) for x in batch], dim=0)
 
 
 def _test_packed_loss(
-    loss_accum_func: Callable[
-        [torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor], torch.Tensor
-    ],
+    loss_accum_func: Callable[[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor], torch.Tensor],
     packed_loss_func: PackedLoss,
     samples: list[tuple[int, int, int, int, int]],
     max_seq_len: int,
@@ -89,9 +85,7 @@ def _test_packed_loss(
 
         inp = torch.randn(time, dim, max_patch_size)
         target = torch.randn(time, dim, max_patch_size)
-        observed_mask = (
-            torch.zeros(time, dim, max_patch_size, dtype=torch.bool) < observed_pct
-        )
+        observed_mask = torch.zeros(time, dim, max_patch_size, dtype=torch.bool) < observed_pct
         prediction_mask = torch.zeros(time, dim, dtype=torch.bool)
         prediction_mask[-n_target_time:, -target_dim:] = True
 

@@ -47,9 +47,7 @@ def test_feedforward(
     ffn_dropout_p: float,
 ):
     ffn_cls = GatedLinearUnitFeedForward if use_glu else FeedForward
-    ffn = ffn_cls(
-        in_dim, hidden_dim, out_dim, activation, bias=bias, ffn_dropout_p=ffn_dropout_p
-    )
+    ffn = ffn_cls(in_dim, hidden_dim, out_dim, activation, bias=bias, ffn_dropout_p=ffn_dropout_p)
     x = torch.randn(batch_shape + (in_dim,))
     y = ffn(x)
     assert y.shape == x.shape[:-1] + (ffn.out_dim,)

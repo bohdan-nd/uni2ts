@@ -50,9 +50,7 @@ class AttentionBias(nn.Module, abc.ABC):
 class RelativeAttentionBias(AttentionBias):
     def __init__(self, num_buckets: int, dim: int, num_heads: int, num_groups: int):
         super().__init__(dim, num_heads, num_groups)
-        self.emb = nn.Embedding(
-            num_embeddings=num_buckets, embedding_dim=self.num_heads
-        )
+        self.emb = nn.Embedding(num_embeddings=num_buckets, embedding_dim=self.num_heads)
 
     def forward(
         self,

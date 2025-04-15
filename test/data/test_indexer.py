@@ -52,9 +52,7 @@ def _test_item(
     assert item["target"].shape == target_shape + (ts_lengths[0],)
 
     if past_feat_dynamic_real_dim is not None:
-        feat_shape = (
-            () if past_feat_dynamic_real_dim == 1 else (past_feat_dynamic_real_dim,)
-        )
+        feat_shape = () if past_feat_dynamic_real_dim == 1 else (past_feat_dynamic_real_dim,)
         assert item["past_feat_dynamic_real"].shape == feat_shape + (ts_lengths[0],)
 
 
@@ -71,10 +69,7 @@ def _test_batch(
             assert isinstance(batch[k], BatchedDateTime)
         elif k in ("target", "past_feat_dynamic_real"):
             assert isinstance(batch[k], list)
-            assert all(
-                isinstance(example, (UnivarTimeSeries, MultivarTimeSeries))
-                for example in batch[k]
-            )
+            assert all(isinstance(example, (UnivarTimeSeries, MultivarTimeSeries)) for example in batch[k])
         else:
             raise AssertionError(f"Unexpected key: {k}")
 
@@ -83,9 +78,7 @@ def _test_batch(
         assert target.shape == target_shape + (ts_lengths[idx],)
 
     if past_feat_dynamic_real_dim is not None:
-        feat_shape = (
-            () if past_feat_dynamic_real_dim == 1 else (past_feat_dynamic_real_dim,)
-        )
+        feat_shape = () if past_feat_dynamic_real_dim == 1 else (past_feat_dynamic_real_dim,)
         for idx, past_feat_dynamic_real in enumerate(batch["past_feat_dynamic_real"]):
             assert past_feat_dynamic_real.shape == feat_shape + (ts_lengths[idx],)
 

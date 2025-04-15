@@ -35,9 +35,7 @@ class DatasetBuilder(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def load_dataset(
-        self, transform_map: dict[Any, Callable[..., Transformation]]
-    ) -> Dataset:
+    def load_dataset(self, transform_map: dict[Any, Callable[..., Transformation]]) -> Dataset:
         """
         Load the dataset.
 
@@ -58,25 +56,19 @@ class ConcatDatasetBuilder(DatasetBuilder):
         """
         super().__init__()
         assert len(builders) > 0, "Must provide at least one builder to ConcatBuilder"
-        assert all(
-            isinstance(builder, DatasetBuilder) for builder in builders
-        ), "All builders must be instances of DatasetBuilder"
+        assert all(isinstance(builder, DatasetBuilder) for builder in builders), (
+            "All builders must be instances of DatasetBuilder"
+        )
         self.builders: tuple[DatasetBuilder, ...] = builders
 
     def build_dataset(self):
-        raise ValueError(
-            "Do not use ConcatBuilder to build datasets, build sub datasets individually instead."
-        )
+        raise ValueError("Do not use ConcatBuilder to build datasets, build sub datasets individually instead.")
 
-    def load_dataset(
-        self, transform_map: dict[Any, Callable[..., Transformation]]
-    ) -> ConcatDataset:
+    def load_dataset(self, transform_map: dict[Any, Callable[..., Transformation]]) -> ConcatDataset:
         """
         Loads all builders with ConcatDataset.
 
         :param transform_map: a map which returns the required dataset transformations to be applied
         :return: the dataset ready for training
         """
-        return ConcatDataset(
-            [builder.load_dataset(transform_map) for builder in self.builders]
-        )
+        return ConcatDataset([builder.load_dataset(transform_map) for builder in self.builders])

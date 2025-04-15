@@ -33,9 +33,7 @@ class PointNormType(Enum):
     ABS_TARGET_SQ = "absolute_target_squared"  # matfact def of NRMSE/ND
     TARGET = "target"  # normalize by mean target for each obs
     TARGET_SQ = "target_squared"  # classical def of NRMSE/NMAE
-    STD_DEV = (
-        "standard_deviation"  # normalize by standard deviation of target for each obs
-    )
+    STD_DEV = "standard_deviation"  # normalize by standard deviation of target for each obs
     VAR = "variance"  # normalize by variance of target for each obs
     # MAX_MIN = "max_min"
     # IQR = "interquartile_range"
@@ -66,9 +64,7 @@ class PackedPointNormalizedLoss(PackedPointLoss, abc.ABC):
         variate_id: Int[torch.Tensor, "*batch seq_len"],
     ) -> Float[torch.Tensor, "*batch seq_len #dim"]:
         loss = self.error_func(pred, target)
-        denominator = self.denominator_func(
-            target, observed_mask, sample_id, variate_id
-        )
+        denominator = self.denominator_func(target, observed_mask, sample_id, variate_id)
         loss = safe_div(loss, denominator)
         return loss
 
@@ -127,9 +123,7 @@ class PackedPointNormalizedLoss(PackedPointLoss, abc.ABC):
         sample_id: Int[torch.Tensor, "*batch seq_len"],
         variate_id: Int[torch.Tensor, "*batch seq_len"],
     ) -> Float[torch.Tensor, "*batch seq_len #dim"]:
-        return self.reduce_denominator(
-            target.abs(), observed_mask, sample_id, variate_id
-        )
+        return self.reduce_denominator(target.abs(), observed_mask, sample_id, variate_id)
 
     def abs_target_sq_denominator(
         self,
@@ -159,9 +153,7 @@ class PackedPointNormalizedLoss(PackedPointLoss, abc.ABC):
         sample_id: Int[torch.Tensor, "*batch seq_len"],
         variate_id: Int[torch.Tensor, "*batch seq_len"],
     ) -> Float[torch.Tensor, "*batch seq_len #dim"]:
-        return torch.pow(
-            self.reduce_denominator(target, observed_mask, sample_id, variate_id), 2
-        )
+        return torch.pow(self.reduce_denominator(target, observed_mask, sample_id, variate_id), 2)
 
     def std_dev_denominator(
         self,
@@ -197,10 +189,7 @@ class PackedPointNormalizedLoss(PackedPointLoss, abc.ABC):
         )
         loc = safe_div(loc, tobs)
         var = reduce(
-            id_mask
-            * reduce(
-                ((target - loc) ** 2) * observed_mask, "... seq dim -> ... 1 seq", "sum"
-            ),
+            id_mask * reduce(((target - loc) ** 2) * observed_mask, "... seq dim -> ... 1 seq", "sum"),
             "... seq1 seq2 -> ... seq1 1",
             "sum",
         )
@@ -255,9 +244,7 @@ class PackedNRMSELoss(PackedPointNormalizedLoss):
         )
         loss = safe_div(loss, torch.sqrt(tobs))
 
-        return super().reduce_loss(
-            loss, prediction_mask, observed_mask, sample_id, variate_id
-        )
+        return super().reduce_loss(loss, prediction_mask, observed_mask, sample_id, variate_id)
 
 
 class PackedNMLSELoss(PackedPointNormalizedLoss):
@@ -276,7 +263,5 @@ class PackedNMLSELoss(PackedPointNormalizedLoss):
         sample_id: Int[torch.Tensor, "*batch seq_len"],
         variate_id: Int[torch.Tensor, "*batch seq_len"],
     ) -> Float[torch.Tensor, "*batch seq_len #dim"]:
-        loss = super()._loss_func(
-            pred, target, prediction_mask, observed_mask, sample_id, variate_id
-        )
+        loss = super()._loss_func(pred, target, prediction_mask, observed_mask, sample_id, variate_id)
         return torch.log1p(loss / self.df)

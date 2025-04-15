@@ -76,9 +76,7 @@ class HuggingFaceCheckpoint(ModelCheckpoint):
             moirai_module = pretrain_module.module
         except AttributeError:
             moirai_module = pretrain_module
-            warnings.warn(
-                "Warning: no module attribute found in the model. Saving the model directly."
-            )
+            warnings.warn("Warning: no module attribute found in the model. Saving the model directly.")
 
         # filepath in pytorch lightning usually ends with .ckpt
         # To get the directory to save the model, remove the .ckpt

@@ -53,9 +53,7 @@ class SinusoidalPositionEncoding(nn.Module):
 
         self.register_buffer("pe", pe, persistent=False)
 
-    def forward(
-        self, pos_id: Int[torch.Tensor, "*batch length"]
-    ) -> Float[torch.Tensor, "*batch length dim"]:
+    def forward(self, pos_id: Int[torch.Tensor, "*batch length"]) -> Float[torch.Tensor, "*batch length dim"]:
         return self.pe[pos_id]
 
 
@@ -72,7 +70,5 @@ class LearnedEmbedding(nn.Module):
             width,
         )
 
-    def forward(
-        self, pos_id: Int[torch.Tensor, "*batch length"]
-    ) -> Float[torch.Tensor, "*batch length dim"]:
+    def forward(self, pos_id: Int[torch.Tensor, "*batch length"]) -> Float[torch.Tensor, "*batch length dim"]:
         return self.pe(pos_id)

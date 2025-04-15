@@ -39,16 +39,12 @@ class CloudOpsTSFDatasetBuilder(LOTSADatasetBuilder):
     dataset_load_func_map = defaultdict(lambda: partial(TimeSeriesDataset))
 
     def build_dataset(self, dataset: str, num_proc: int = os.cpu_count()):
-        cloudops_dataset = load_dataset(
-            path="Salesforce/cloudops_tsf", name=dataset, split="pretrain"
-        )
+        cloudops_dataset = load_dataset(path="Salesforce/cloudops_tsf", name=dataset, split="pretrain")
         cfg = load_dataset_builder(
             path="Salesforce/cloudops_tsf",
             name=dataset,
         ).config
-        pde = ProcessDataEntry(
-            freq=cfg.freq, one_dim_target=cfg.univariate, use_timestamp=False
-        )
+        pde = ProcessDataEntry(freq=cfg.freq, one_dim_target=cfg.univariate, use_timestamp=False)
         splitter = DateSplitter(cfg.test_split_date)
 
         def process(entry):
@@ -70,9 +66,7 @@ class CloudOpsTSFDatasetBuilder(LOTSADatasetBuilder):
             if cfg.target_dim == 1
             else Sequence(Sequence(Value("float32")), length=cfg.target_dim)
         )
-        past_feat_dynamic_real_feature = Sequence(
-            Sequence(Value("float32")), length=cfg.past_feat_dynamic_real_dim
-        )
+        past_feat_dynamic_real_feature = Sequence(Sequence(Value("float32")), length=cfg.past_feat_dynamic_real_dim)
 
         hf_dataset = datasets.Dataset.from_generator(
             gen_func,

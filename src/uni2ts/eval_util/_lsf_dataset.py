@@ -75,9 +75,7 @@ class LSFDataset:
         return (data - mean) / std
 
     def _load_etth(self):
-        df = pd.read_csv(
-            os.path.join(env.LSF_PATH, f"ETT-small/{self.dataset_name}.csv")
-        )
+        df = pd.read_csv(os.path.join(env.LSF_PATH, f"ETT-small/{self.dataset_name}.csv"))
 
         train_length = 8640
         val_length = 2880
@@ -96,9 +94,7 @@ class LSFDataset:
         self.freq = "h"
 
     def _load_ettm(self):
-        df = pd.read_csv(
-            os.path.join(env.LSF_PATH, f"ETT-small/{self.dataset_name}.csv")
-        )
+        df = pd.read_csv(os.path.join(env.LSF_PATH, f"ETT-small/{self.dataset_name}.csv"))
 
         train_length = 34560
         val_length = 11520
@@ -163,11 +159,7 @@ class LSFDataset:
         self.freq = "5T"
 
     def _load_walmart(self):
-        df = pd.read_csv(
-            os.path.join(
-                env.LSF_PATH, "walmart-recruiting-store-sales-forecasting/train.csv"
-            )
-        )
+        df = pd.read_csv(os.path.join(env.LSF_PATH, "walmart-recruiting-store-sales-forecasting/train.csv"))
 
         data = []
         for id, row in df[["Store", "Dept"]].drop_duplicates().iterrows():

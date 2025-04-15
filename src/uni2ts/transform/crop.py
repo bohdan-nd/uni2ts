@@ -46,9 +46,7 @@ class PatchCrop(MapFuncMixin, Transformation):
     optional_fields: tuple[str, ...] = ("past_feat_dynamic_real",)
 
     def __post_init__(self):
-        assert (
-            self.min_time_patches <= self.max_patches
-        ), "min_patches must be <= max_patches"
+        assert self.min_time_patches <= self.max_patches, "min_patches must be <= max_patches"
         assert len(self.fields) > 0, "fields must be non-empty"
 
     def __call__(self, data_entry: dict[str, Any]) -> dict[str, Any]:
@@ -83,24 +81,16 @@ class PatchCrop(MapFuncMixin, Transformation):
             if self.offset
             else 0
         )
-        total_patches = (
-            time - offset
-        ) // patch_size  # total number of patches in time series
+        total_patches = (time - offset) // patch_size  # total number of patches in time series
 
         # 1. max_patches should be divided by nvar if the time series is subsequently flattened
         # 2. cannot have more patches than total available patches
         max_patches = min(self.max_patches // nvar, total_patches)
         if max_patches < self.min_time_patches:
-            raise ValueError(
-                f"max_patches={max_patches} < min_time_patches={self.min_time_patches}"
-            )
+            raise ValueError(f"max_patches={max_patches} < min_time_patches={self.min_time_patches}")
 
-        num_patches = np.random.randint(
-            self.min_time_patches, max_patches + 1
-        )  # number of patches to consider
-        first = np.random.randint(
-            total_patches - num_patches + 1
-        )  # first patch to consider
+        num_patches = np.random.randint(self.min_time_patches, max_patches + 1)  # number of patches to consider
+        first = np.random.randint(total_patches - num_patches + 1)  # first patch to consider
 
         start = offset + first * patch_size
         stop = start + num_patches * patch_size

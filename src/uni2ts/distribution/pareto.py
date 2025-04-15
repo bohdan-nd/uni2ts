@@ -30,20 +30,14 @@ class ParetoOutput(DistributionOutput):
     @property
     def domain_map(
         self,
-    ) -> PyTree[
-        Callable[[Float[torch.Tensor, "*batch 1"]], Float[torch.Tensor, "*batch"]], "T"
-    ]:
+    ) -> PyTree[Callable[[Float[torch.Tensor, "*batch 1"]], Float[torch.Tensor, "*batch"]], "T"]:
         return dict(scale=self._scale, alpha=self._alpha)
 
-    def _scale(
-        self, scale: Float[torch.Tensor, "*batch 1"]
-    ) -> Float[torch.Tensor, "*batch"]:
+    def _scale(self, scale: Float[torch.Tensor, "*batch 1"]) -> Float[torch.Tensor, "*batch"]:
         epsilon = torch.finfo(scale.dtype).eps
         return F.softplus(scale).clamp_min(epsilon).squeeze(-1)
 
-    def _alpha(
-        self, alpha: Float[torch.Tensor, "*batch 1"]
-    ) -> Float[torch.Tensor, "*batch"]:
+    def _alpha(self, alpha: Float[torch.Tensor, "*batch 1"]) -> Float[torch.Tensor, "*batch"]:
         epsilon = torch.finfo(alpha.dtype).eps
         return (2.0 + F.softplus(alpha).clamp_min(epsilon)).squeeze(-1)
 
@@ -59,14 +53,10 @@ class ParetoFixedAlphaOutput(DistributionOutput):
     @property
     def domain_map(
         self,
-    ) -> PyTree[
-        Callable[[Float[torch.Tensor, "*batch 1"]], Float[torch.Tensor, "*batch"]], "T"
-    ]:
+    ) -> PyTree[Callable[[Float[torch.Tensor, "*batch 1"]], Float[torch.Tensor, "*batch"]], "T"]:
         return dict(scale=self._scale)
 
-    def _scale(
-        self, scale: Float[torch.Tensor, "*batch 1"]
-    ) -> Float[torch.Tensor, "*batch"]:
+    def _scale(self, scale: Float[torch.Tensor, "*batch 1"]) -> Float[torch.Tensor, "*batch"]:
         epsilon = torch.finfo(scale.dtype).eps
         return F.softplus(scale).clamp_min(epsilon).squeeze(-1)
 
@@ -76,7 +66,5 @@ class ParetoFixedAlphaOutput(DistributionOutput):
         validate_args: Optional[bool] = None,
     ) -> Pareto:
         scale = distr_params["scale"]
-        distr_params["alpha"] = torch.as_tensor(
-            self.alpha, dtype=scale.dtype, device=scale.device
-        )
+        distr_params["alpha"] = torch.as_tensor(self.alpha, dtype=scale.dtype, device=scale.device)
         return self.distr_cls(**distr_params, validate_args=validate_args)

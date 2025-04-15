@@ -50,9 +50,7 @@ def test_rotary_projection(
     seed: int = 0,
 ):
     torch.manual_seed(seed)
-    rotary = RotaryProjection(
-        proj_width=dim, num_heads=num_heads, num_groups=num_groups, max_len=max_len
-    )
+    rotary = RotaryProjection(proj_width=dim, num_heads=num_heads, num_groups=num_groups, max_len=max_len)
 
     batch_shape_str = " ".join(str(bs) for bs in batch_shape)
     x = torch.randn(batch_shape + (seq_len, rotary.proj_width))
@@ -75,9 +73,7 @@ def test_rotary_projection(
         for w_id in range(1, rotary.proj_width // 2 + 1):
             theta_i = 10000 ** (-2 * (w_id - 1) / rotary.proj_width)
             w_id -= 1
-            R[idx][2 * w_id : 2 * w_id + 2, 2 * w_id : 2 * w_id + 2] = get_square(
-                theta_i, m
-            )
+            R[idx][2 * w_id : 2 * w_id + 2, 2 * w_id : 2 * w_id + 2] = get_square(theta_i, m)
 
     Rx = (R @ x.unsqueeze(-1)).squeeze(-1)
 

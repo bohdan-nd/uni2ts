@@ -136,9 +136,7 @@ def test_multi_dataset(hf_dataset_path):
     ],
 )
 @pytest.mark.parametrize("seed", [0, 1, 2])
-def test_weighted_dataset(
-    hf_dataset_path, weight: float, sample_time_series: SampleTimeSeriesType, seed: int
-):
+def test_weighted_dataset(hf_dataset_path, weight: float, sample_time_series: SampleTimeSeriesType, seed: int):
     (
         dataset_path,
         num_examples,
@@ -157,9 +155,7 @@ def test_weighted_dataset(
     if sample_time_series == SampleTimeSeriesType.UNIFORM:
         assert (dataset.probabilities == 1 / num_examples).all()
     elif sample_time_series == SampleTimeSeriesType.PROPORTIONAL:
-        lengths = np.asarray(
-            [sample["target"].shape[-1] for sample in hf_dataset_indexer]
-        )
+        lengths = np.asarray([sample["target"].shape[-1] for sample in hf_dataset_indexer])
         probs = lengths / lengths.sum()
         assert np.allclose(dataset.probabilities, probs)
 
@@ -173,9 +169,7 @@ def test_weighted_dataset(
 
             if sample_time_series != SampleTimeSeriesType.NONE:
                 np.random.seed(seed + i * 2 + j)
-                sample_b = hf_dataset_indexer[
-                    np.random.choice(len(hf_dataset_indexer), p=dataset.probabilities)
-                ]
+                sample_b = hf_dataset_indexer[np.random.choice(len(hf_dataset_indexer), p=dataset.probabilities)]
             else:
                 sample_b = next(idx_iter)
 

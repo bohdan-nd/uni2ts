@@ -35,9 +35,7 @@ class MaskedPrediction(MapFuncMixin, CheckArrNDimMixin, Transformation):
     expected_ndim: int = 2
 
     def __post_init__(self):
-        assert (
-            self.min_mask_ratio <= self.max_mask_ratio
-        ), "min_mask_ratio must be <= max_mask_ratio"
+        assert self.min_mask_ratio <= self.max_mask_ratio, "min_mask_ratio must be <= max_mask_ratio"
 
     def __call__(self, data_entry: dict[str, Any]) -> dict[str, Any]:
         target = data_entry[self.target_field]
@@ -51,9 +49,7 @@ class MaskedPrediction(MapFuncMixin, CheckArrNDimMixin, Transformation):
         data_entry[self.prediction_mask_field] = prediction_mask
         return data_entry
 
-    def _generate_prediction_mask(
-        self, target: Float[np.ndarray, "var time *feat"]
-    ) -> Bool[np.ndarray, "var time"]:
+    def _generate_prediction_mask(self, target: Float[np.ndarray, "var time *feat"]) -> Bool[np.ndarray, "var time"]:
         self.check_ndim("target", target, self.expected_ndim)
         var, time = target.shape[:2]
         prediction_mask = np.zeros((var, time), dtype=bool)
@@ -103,9 +99,7 @@ class ExtendMask(CheckArrNDimMixin, CollectFuncMixin, Transformation):
         data_entry[self.mask_field] = [target_mask] + aux_target_mask
         return data_entry
 
-    def _generate_target_mask(
-        self, data_entry: dict[str, Any], field: str
-    ) -> np.ndarray:
+    def _generate_target_mask(self, data_entry: dict[str, Any], field: str) -> np.ndarray:
         arr: np.ndarray = data_entry[field]
         self.check_ndim(field, arr, self.expected_ndim)
         var, time = arr.shape[:2]
@@ -134,9 +128,7 @@ class EvalMaskedPrediction(MapFuncMixin, CheckArrNDimMixin, Transformation):
         data_entry[self.prediction_mask_field] = prediction_mask
         return data_entry
 
-    def _generate_prediction_mask(
-        self, target: Float[np.ndarray, "var time *feat"]
-    ) -> Bool[np.ndarray, "var time"]:
+    def _generate_prediction_mask(self, target: Float[np.ndarray, "var time *feat"]) -> Bool[np.ndarray, "var time"]:
         self.check_ndim("target", target, self.expected_ndim)
         var, time = target.shape[:2]
         prediction_mask = np.zeros((var, time), dtype=bool)

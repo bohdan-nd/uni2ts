@@ -36,9 +36,7 @@ class Collate:
 
     max_length: Optional[int]
     seq_fields: tuple[str, ...]
-    pad_func_map: dict[str, Callable[[Sequence[int], np.dtype], np.ndarray]] = field(
-        default_factory=dict
-    )
+    pad_func_map: dict[str, Callable[[Sequence[int], np.dtype], np.ndarray]] = field(default_factory=dict)
     target_field: str = "target"
 
     def __post_init__(self):
@@ -57,15 +55,11 @@ class PadCollate(Collate):
 
     def __call__(self, batch: list[Sample]) -> BatchedSample:
         assert all(
-            [
-                len(sample[self.target_field]) == len(sample[key])
-                for sample in batch
-                for key in self.seq_fields
-            ]
+            [len(sample[self.target_field]) == len(sample[key]) for sample in batch for key in self.seq_fields]
         ), "All fields must have the same length."
-        assert all(
-            [len(sample[self.target_field]) <= self.max_length for sample in batch]
-        ), f"Sample length must be less than or equal to max_length ({self.max_length})"
+        assert all([len(sample[self.target_field]) <= self.max_length for sample in batch]), (
+            f"Sample length must be less than or equal to max_length ({self.max_length})"
+        )
 
         sample_id = self.get_sample_id(batch)
         padded_batch = self.pad_samples(batch)
@@ -105,21 +99,15 @@ class PackCollate(Collate):
 
     def __call__(self, batch: list[Sample]) -> BatchedSample:
         assert all(
-            [
-                len(sample[self.target_field]) == len(sample[key])
-                for sample in batch
-                for key in self.seq_fields
-            ]
+            [len(sample[self.target_field]) == len(sample[key]) for sample in batch for key in self.seq_fields]
         ), "All fields must have the same length."
-        assert all(
-            [len(sample[self.target_field]) <= self.max_length for sample in batch]
-        ), f"Sample length must be less than or equal to max_length ({self.max_length})"
+        assert all([len(sample[self.target_field]) <= self.max_length for sample in batch]), (
+            f"Sample length must be less than or equal to max_length ({self.max_length})"
+        )
 
         packed_batch, bin_spaces = self.first_fit_decreasing_bin_packing(batch)
         sample_id = self.get_sample_id(packed_batch, bin_spaces)
-        merged_batch = self.merge_batch(packed_batch, bin_spaces) | dict(
-            sample_id=sample_id
-        )
+        merged_batch = self.merge_batch(packed_batch, bin_spaces) | dict(sample_id=sample_id)
         return merged_batch
 
     def first_fit_decreasing_bin_packing(
@@ -138,9 +126,7 @@ class PackCollate(Collate):
             - packed_batch - batch which has been packed
             - bin_spaces - length of each bin
         """
-        batch = sorted(
-            batch, key=lambda sample: len(sample[self.target_field]), reverse=True
-        )
+        batch = sorted(batch, key=lambda sample: len(sample[self.target_field]), reverse=True)
         bin_spaces: Int[np.ndarray, "batch"] = np.full(len(batch), self.max_length)
         packed_batch: list[list[Sample]] = [[]]
 
@@ -172,10 +158,7 @@ class PackCollate(Collate):
         sample_id = torch.stack(
             [
                 torch.cat(
-                    [
-                        torch.ones(len(sample[self.target_field])) * (idx + 1)
-                        for idx, sample in enumerate(bin_)
-                    ]
+                    [torch.ones(len(sample[self.target_field])) * (idx + 1) for idx, sample in enumerate(bin_)]
                     + [torch.zeros(space)],  # padding
                 )
                 for bin_, space in zip(batch, bin_spaces)
@@ -183,9 +166,7 @@ class PackCollate(Collate):
         ).to(torch.long)
         return sample_id
 
-    def merge_batch(
-        self, batch: list[list[Sample]], bin_spaces: Int[np.ndarray, "batch"]
-    ) -> BatchedSample:
+    def merge_batch(self, batch: list[list[Sample]], bin_spaces: Int[np.ndarray, "batch"]) -> BatchedSample:
         """Combines packed samples into BatchedSample format."""
         batch = {
             key: torch.stack(
@@ -216,20 +197,13 @@ class SliceableBatchedSample:
     data: BatchedSample
 
     def __post_init__(self):
-        assert all(
-            [
-                len(self.data[key]) == len(self.data[next(iter(self.data))])
-                for key in self.data.keys()
-            ]
-        )
+        assert all([len(self.data[key]) == len(self.data[next(iter(self.data))]) for key in self.data.keys()])
 
     def __len__(self) -> int:
         return len(self.data[next(iter(self.data))])
 
     def __getitem__(self, item: slice) -> "SliceableBatchedSample":
-        return SliceableBatchedSample(
-            {key: self.data[key][item] for key in self.data.keys()}
-        )
+        return SliceableBatchedSample({key: self.data[key][item] for key in self.data.keys()})
 
 
 class Metadata(NamedTuple):
@@ -256,9 +230,7 @@ class BatchedSampleQueue:
         """
         if self.schema is None:
             self.schema = {
-                key: Metadata(
-                    shape=tuple(batch.data[key].shape[1:]), dtype=batch.data[key].dtype
-                )
+                key: Metadata(shape=tuple(batch.data[key].shape[1:]), dtype=batch.data[key].dtype)
                 for key in batch.data.keys()
             }
         else:
@@ -288,9 +260,7 @@ class BatchedSampleQueue:
     def popleft(self, size: int) -> BatchedSample:
         """Pops a batch from the start of the queue."""
         if size > len(self):
-            raise ValueError(
-                f"pop size ({size}) must be less than or equal to queue size ({len(self)})"
-            )
+            raise ValueError(f"pop size ({size}) must be less than or equal to queue size ({len(self)})")
 
         out = BatchedSampleQueue()
         while len(out) < size:
@@ -303,10 +273,7 @@ class BatchedSampleQueue:
 
     def as_batched_data(self) -> BatchedSample:
         """Returns the queue as a BatchedSample"""
-        return {
-            key: torch.cat([batch.data[key] for batch in self.container], dim=0)
-            for key in self.schema.keys()
-        }
+        return {key: torch.cat([batch.data[key] for batch in self.container], dim=0) for key in self.schema.keys()}
 
     def __len__(self) -> int:
         """Total number of samples in the queue."""
@@ -369,9 +336,9 @@ class _BatchedSampleIterator:
         if self.queue.schema is None:
             raise ValueError("schema must be set before padding")
         padding = {
-            key: default_convert(
-                self.pad_func_map[key]((size,) + metadata.shape, np.dtype(np.float32))
-            ).to(metadata.dtype)
+            key: default_convert(self.pad_func_map[key]((size,) + metadata.shape, np.dtype(np.float32))).to(
+                metadata.dtype
+            )
             for key, metadata in self.queue.schema.items()
         }
         self.queue.append(padding)

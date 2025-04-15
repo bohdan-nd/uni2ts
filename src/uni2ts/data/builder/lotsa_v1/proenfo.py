@@ -195,11 +195,7 @@ def _get_bull_gen_func(proenfo_path: Path) -> tuple[GenFunc, Features]:
                 item_id=f"Bull_{col}",
                 start=df.index[0],
                 target=df[col],
-                past_feat_dynamic_real=df[
-                    ["airTemperature", "dewTemperature", "seaLvlPressure"]
-                ]
-                .to_numpy()
-                .T,
+                past_feat_dynamic_real=df[["airTemperature", "dewTemperature", "seaLvlPressure"]].to_numpy().T,
                 freq="H",
             )
 
@@ -309,9 +305,7 @@ def _get_covid19_energy_gen_func(proenfo_path: Path) -> tuple[GenFunc, Features]
             item_id=Value("string"),
             start=Value("timestamp[s]"),
             target=Sequence(Value("float32")),
-            past_feat_dynamic_real=Sequence(
-                Sequence(Value("float32")), length=len(past_feat_dynamic_real)
-            ),
+            past_feat_dynamic_real=Sequence(Sequence(Value("float32")), length=len(past_feat_dynamic_real)),
             freq=Value("string"),
         )
     )

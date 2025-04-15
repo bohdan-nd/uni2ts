@@ -30,9 +30,7 @@ def binomial_sampler(n: int | np.ndarray, p: float = 0.5) -> int | np.ndarray:
     return np.random.binomial(n - 1, p) + 1
 
 
-def beta_binomial_sampler(
-    n: int | np.ndarray, a: float = 1, b: float = 1
-) -> int | np.ndarray:
+def beta_binomial_sampler(n: int | np.ndarray, a: float = 1, b: float = 1) -> int | np.ndarray:
     # equivalent to uniform_sampler when a = b = 1
     if isinstance(n, np.ndarray):
         p = np.random.beta(a, b, size=n.shape)

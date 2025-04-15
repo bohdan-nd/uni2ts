@@ -76,13 +76,8 @@ class NegativeBinomial(Distribution):
     def log_prob(self, value: torch.Tensor) -> torch.Tensor:
         if self._validate_args:
             self._validate_sample(value)
-        log_unnormalized_prob = (
-            self.total_count * F.logsigmoid(-self.logits)
-            + F.logsigmoid(self.logits) * value
-        )
-        log_normalization = self._lbeta(1 + value, self.total_count) + torch.log(
-            self.total_count + value
-        )
+        log_unnormalized_prob = self.total_count * F.logsigmoid(-self.logits) + F.logsigmoid(self.logits) * value
+        log_normalization = self._lbeta(1 + value, self.total_count) + torch.log(self.total_count + value)
         return log_unnormalized_prob - log_normalization
 
     def _lbeta(self, x, y):
@@ -104,19 +99,13 @@ class NegativeBinomialOutput(DistributionOutput):
     @property
     def domain_map(
         self,
-    ) -> PyTree[
-        Callable[[Float[torch.Tensor, "*batch 1"]], Float[torch.Tensor, "*batch"]], "T"
-    ]:
+    ) -> PyTree[Callable[[Float[torch.Tensor, "*batch 1"]], Float[torch.Tensor, "*batch"]], "T"]:
         return dict(total_count=self._total_count, logits=self._logits)
 
     @staticmethod
-    def _total_count(
-        total_count: Float[torch.Tensor, "*batch 1"]
-    ) -> Float[torch.Tensor, "*batch"]:
+    def _total_count(total_count: Float[torch.Tensor, "*batch 1"]) -> Float[torch.Tensor, "*batch"]:
         return F.softplus(total_count).squeeze(-1)
 
     @staticmethod
-    def _logits(
-        logits: Float[torch.Tensor, "*batch 1"]
-    ) -> Float[torch.Tensor, "*batch"]:
+    def _logits(logits: Float[torch.Tensor, "*batch 1"]) -> Float[torch.Tensor, "*batch"]:
         return logits.squeeze(-1)

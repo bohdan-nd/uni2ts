@@ -130,36 +130,27 @@ class Buildings900KDatasetBuilder(LOTSADatasetBuilder):
                 "Buildings-900K-test",
             ]:
                 pumas = (
-                    Path(os.getenv("BUILDINGS_BENCH"))
-                    / f"{building_dir}/2021/{building_type_and_year}_release_1/"
+                    Path(os.getenv("BUILDINGS_BENCH")) / f"{building_dir}/2021/{building_type_and_year}_release_1/"
                     f"timeseries_individual_buildings/by_puma_{region}/upgrade=0/"
                 ).glob("puma=*")
 
                 pumas = [p.stem[len("puma=") :] for p in pumas]
 
                 for puma in pumas:
-                    all_jobs.append(
-                        (building_dir, building_type_and_year, region, puma)
-                    )
+                    all_jobs.append((building_dir, building_type_and_year, region, puma))
 
         def gen_func(job_ids: list[int]) -> Generator[dict[str, Any], None, None]:
             for idx in job_ids:
                 building_dir, building_type_and_year, region, puma = all_jobs[idx]
                 tab = pq.read_table(
-                    Path(os.getenv("BUILDINGS_BENCH"))
-                    / f"{building_dir}/2021/{building_type_and_year}_release_1/"
+                    Path(os.getenv("BUILDINGS_BENCH")) / f"{building_dir}/2021/{building_type_and_year}_release_1/"
                     f"timeseries_individual_buildings/by_puma_{region}/upgrade=0/puma={puma}"
                 )
                 tab = tab.sort_by("timestamp")
-                for building_num, col_num in zip(
-                    tab.column_names[1:], range(1, tab.num_columns)
-                ):
+                for building_num, col_num in zip(tab.column_names[1:], range(1, tab.num_columns)):
                     yield dict(
                         item_id=f"{building_type_and_year}_{region}_{puma}_{building_num}",
-                        start=tab.column(0)
-                        .slice(0, 1)
-                        .to_numpy()[0]
-                        .astype("datetime64"),
+                        start=tab.column(0).slice(0, 1).to_numpy()[0].astype("datetime64"),
                         target=tab.column(col_num).to_numpy(),
                         freq="H",
                     )

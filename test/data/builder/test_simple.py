@@ -60,9 +60,7 @@ def test_simple_dataset_builder_wide(
 
     assert (storage_path / "wide_dataset").is_dir()
 
-    hf_dataset = datasets.load_from_disk(
-        str(storage_path / "wide_dataset")
-    ).with_format("numpy")
+    hf_dataset = datasets.load_from_disk(str(storage_path / "wide_dataset")).with_format("numpy")
 
     if offset is not None:
         if offset > 0:
@@ -117,9 +115,7 @@ def test_simple_dataset_builder_long(
 
     assert (storage_path / "long_dataset").is_dir()
 
-    hf_dataset = datasets.load_from_disk(
-        str(storage_path / "long_dataset")
-    ).with_format("numpy")
+    hf_dataset = datasets.load_from_disk(str(storage_path / "long_dataset")).with_format("numpy")
 
     if offset is not None:
         if offset > 0:

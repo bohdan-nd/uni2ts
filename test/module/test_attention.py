@@ -40,9 +40,7 @@ from uni2ts.module.attention import (
         (8, 2),
     ],
 )
-@pytest.mark.parametrize(
-    "norm_layer", [None, nn.LayerNorm, partial(nn.LayerNorm, bias=False)]
-)
+@pytest.mark.parametrize("norm_layer", [None, nn.LayerNorm, partial(nn.LayerNorm, bias=False)])
 @pytest.mark.parametrize("softmax_scale", [None, 0.1])
 @pytest.mark.parametrize("attn_dropout_p", [0.15])
 def test_gqa(
@@ -71,11 +69,7 @@ def test_gqa(
     key = torch.randn(*(batch_shape + (kv_len, dim)))
     value = torch.randn(*(batch_shape + (kv_len, dim)))
 
-    attn_mask = (
-        torch.ones(*(batch_shape + (q_len, kv_len)), dtype=torch.bool)
-        if use_attn_mask
-        else None
-    )
+    attn_mask = torch.ones(*(batch_shape + (q_len, kv_len)), dtype=torch.bool) if use_attn_mask else None
 
     out = attn(query, key, value, attn_mask=attn_mask)
     assert out.shape == batch_shape + (q_len, dim)

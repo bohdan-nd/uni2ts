@@ -205,46 +205,22 @@ def test_transformer_encoder_position_init(
 
     if shared_layers:
         if var_attn_bias_layer is not None:
-            assert (
-                encoder.layers[0].self_attn.var_attn_bias
-                == encoder.layers[1].self_attn.var_attn_bias
-            )
+            assert encoder.layers[0].self_attn.var_attn_bias == encoder.layers[1].self_attn.var_attn_bias
         if time_attn_bias_layer is not None:
-            assert (
-                encoder.layers[0].self_attn.time_attn_bias
-                == encoder.layers[1].self_attn.time_attn_bias
-            )
+            assert encoder.layers[0].self_attn.time_attn_bias == encoder.layers[1].self_attn.time_attn_bias
         if var_qk_proj_layer is not None:
-            assert (
-                encoder.layers[0].self_attn.var_qk_proj
-                == encoder.layers[1].self_attn.var_qk_proj
-            )
+            assert encoder.layers[0].self_attn.var_qk_proj == encoder.layers[1].self_attn.var_qk_proj
         if time_qk_proj_layer is not None:
-            assert (
-                encoder.layers[0].self_attn.time_qk_proj
-                == encoder.layers[1].self_attn.time_qk_proj
-            )
+            assert encoder.layers[0].self_attn.time_qk_proj == encoder.layers[1].self_attn.time_qk_proj
     else:
         if var_attn_bias_layer is not None:
-            assert (
-                encoder.layers[0].self_attn.var_attn_bias
-                != encoder.layers[1].self_attn.var_attn_bias
-            )
+            assert encoder.layers[0].self_attn.var_attn_bias != encoder.layers[1].self_attn.var_attn_bias
         if time_attn_bias_layer is not None:
-            assert (
-                encoder.layers[0].self_attn.time_attn_bias
-                != encoder.layers[1].self_attn.time_attn_bias
-            )
+            assert encoder.layers[0].self_attn.time_attn_bias != encoder.layers[1].self_attn.time_attn_bias
         if var_qk_proj_layer is not None:
-            assert (
-                encoder.layers[0].self_attn.var_qk_proj
-                != encoder.layers[1].self_attn.var_qk_proj
-            )
+            assert encoder.layers[0].self_attn.var_qk_proj != encoder.layers[1].self_attn.var_qk_proj
         if time_qk_proj_layer is not None:
-            assert (
-                encoder.layers[0].self_attn.time_qk_proj
-                != encoder.layers[1].self_attn.time_qk_proj
-            )
+            assert encoder.layers[0].self_attn.time_qk_proj != encoder.layers[1].self_attn.time_qk_proj
 
 
 @pytest.mark.parametrize(
@@ -327,14 +303,8 @@ def test_transformer_encoder_position_forward(
             d_model,
         )
     )
-    attn_mask = (
-        torch.ones(batch_shape + (time_len, time_len), dtype=torch.bool)
-        if use_attn_mask
-        else None
-    )
-    var_id = (
-        torch.zeros(batch_shape + (time_len,), dtype=torch.long) if use_var_id else None
-    )
+    attn_mask = torch.ones(batch_shape + (time_len, time_len), dtype=torch.bool) if use_attn_mask else None
+    var_id = torch.zeros(batch_shape + (time_len,), dtype=torch.long) if use_var_id else None
     time_id = (
         repeat(
             torch.arange(time_len, dtype=torch.long),

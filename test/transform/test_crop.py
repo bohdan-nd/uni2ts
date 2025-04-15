@@ -36,10 +36,7 @@ def array_in(arr: np.ndarray, test_arr: np.ndarray):
     ax = (1,) if arr.ndim == 1 else (1, 2)
     return (
         np.isclose(
-            arr[
-                np.arange(len(arr) - len(test_arr) + 1)[:, None]
-                + np.arange(len(test_arr))
-            ],
+            arr[np.arange(len(arr) - len(test_arr) + 1)[:, None] + np.arange(len(test_arr))],
             test_arr,
         )
         .all(axis=ax)
@@ -167,9 +164,7 @@ def test_patch_crop(
 
 @pytest.mark.parametrize(
     "length, freq",
-    [(1000, "T")]
-    + [(l, "H") for l in [1000, 2000, 3000]]
-    + [(100, f) for f in ["B", "W", "7D", "D", "15T"]],
+    [(1000, "T")] + [(l, "H") for l in [1000, 2000, 3000]] + [(100, f) for f in ["B", "W", "7D", "D", "15T"]],
 )
 @pytest.mark.parametrize("target_dim", [1, 3])
 @pytest.mark.parametrize("past_feat_dynamic_real_dim", [None, 1, 3])
@@ -224,18 +219,8 @@ def test_patch_crop_transform_pipeline(
     if target_dim > 1:
         assert target_dim == transformed_target.shape[0]
     if flatten:
-        assert (
-            transformed_target_length
-            // patch_size
-            * (target_dim + (past_feat_dynamic_real_dim or 0))
-            >= min_patches
-        )
-        assert (
-            transformed_target_length
-            // patch_size
-            * (target_dim + (past_feat_dynamic_real_dim or 0))
-            <= max_patches
-        )
+        assert transformed_target_length // patch_size * (target_dim + (past_feat_dynamic_real_dim or 0)) >= min_patches
+        assert transformed_target_length // patch_size * (target_dim + (past_feat_dynamic_real_dim or 0)) <= max_patches
     else:
         assert transformed_target_length // patch_size >= min_patches
         assert transformed_target_length // patch_size <= max_patches
@@ -302,11 +287,8 @@ def test_eval_crop(
 
             assert transformed_data_entry["target"][0].shape[0] == b - a
             assert np.all(
-                np.asarray(transformed_data_entry["target"])
-                == np.asarray(data_entry["target"])[..., a : b or None]
+                np.asarray(transformed_data_entry["target"]) == np.asarray(data_entry["target"])[..., a : b or None]
             )
 
             if dim > 1:
-                assert len(transformed_data_entry["target"]) == len(
-                    data_entry["target"]
-                )
+                assert len(transformed_data_entry["target"]) == len(data_entry["target"])

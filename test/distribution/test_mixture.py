@@ -99,9 +99,7 @@ def test_mixture_sample_stats(
     logits: tuple[float, ...],
     batch_shape: tuple[int, ...],
 ):
-    logits = repeat(
-        torch.as_tensor(logits), f"c -> {' '.join(map(str, batch_shape))} c"
-    )
+    logits = repeat(torch.as_tensor(logits), f"c -> {' '.join(map(str, batch_shape))} c")
 
     distr1 = distr1_func(batch_shape)
     distr2 = distr2_func(batch_shape)

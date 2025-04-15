@@ -50,9 +50,7 @@ def fixed_patch_size_constraints(start: int, stop: Optional[int]):
             assert max(freq_constraint) == start
 
 
-@pytest.mark.parametrize(
-    "freq", ["30S", "60S", "T", "5T", "30T", "H", "6H", "24H", "D", "7D", "W", "M", "Q"]
-)
+@pytest.mark.parametrize("freq", ["30S", "60S", "T", "5T", "30T", "H", "6H", "24H", "D", "7D", "W", "M", "Q"])
 def test_default_patch_size_constraints(freq: str):
     freq_constraint = DefaultPatchSizeConstraints()(freq)
     start, stop = DefaultPatchSizeConstraints.DEFAULT_RANGES[freq[-1]]
@@ -60,9 +58,7 @@ def test_default_patch_size_constraints(freq: str):
     assert max(freq_constraint) == stop
 
 
-@pytest.mark.parametrize(
-    "freq", ["30S", "60S", "T", "5T", "30T", "H", "6H", "24H", "D", "7D", "W", "M", "Q"]
-)
+@pytest.mark.parametrize("freq", ["30S", "60S", "T", "5T", "30T", "H", "6H", "24H", "D", "7D", "W", "M", "Q"])
 @pytest.mark.parametrize(
     "patch_sizes",
     [
@@ -76,9 +72,7 @@ def test_default_patch_size_constraints(freq: str):
         (DefaultPatchSizeConstraints(), does_not_raise()),
         (
             FixedPatchSizeConstraints(1),
-            pytest.raises(
-                AssertionError, match=r"no valid patch size candidates for \w+"
-            ),
+            pytest.raises(AssertionError, match=r"no valid patch size candidates for \w+"),
         ),
     ],
 )
@@ -103,9 +97,7 @@ def test_get_patch_size(
         assert "patch_size" in transformed_data_entry
         assert isinstance(transformed_data_entry["patch_size"], (np.int64, int))
         assert transformed_data_entry["patch_size"] in transform.patch_sizes
-        assert transformed_data_entry["patch_size"] in transform.patch_size_constraints(
-            freq
-        )
+        assert transformed_data_entry["patch_size"] in transform.patch_size_constraints(freq)
 
 
 @pytest.mark.parametrize("target_dim", [1, 2, 3])
@@ -139,8 +131,5 @@ def test_patchify(
     assert transformed_target.ndim == target.ndim + 1
     assert transformed_target.shape[-2] == target.shape[-1] // patch_size
     assert transformed_target.shape[-1] == max_patch_size
-    assert np.all(
-        transformed_target[:, patch_size:]
-        == np.zeros_like(transformed_target[:, patch_size:])
-    )
+    assert np.all(transformed_target[:, patch_size:] == np.zeros_like(transformed_target[:, patch_size:]))
     assert transformed_target.shape[0] == target_dim

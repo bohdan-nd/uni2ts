@@ -63,9 +63,7 @@ def test_pack_fields(
     )
     transformed_data_entry = pack_fields(data_entry.copy())
     output = transformed_data_entry[output_field]
-    assert output.shape[0] == sum(
-        (field_dim_mapping | optional_field_dim_mapping).values()
-    )
+    assert output.shape[0] == sum((field_dim_mapping | optional_field_dim_mapping).values())
     assert output.shape[1] == length
     if patch_size is not None:
         assert output.shape[-1] == patch_size
@@ -121,9 +119,7 @@ def test_flat_pack_fields(
     )
     transformed_data_entry = pack_fields(data_entry.copy())
     output = transformed_data_entry[output_field]
-    assert output.shape[0] == length * sum(
-        (field_dim_mapping | optional_field_dim_mapping).values()
-    )
+    assert output.shape[0] == length * sum((field_dim_mapping | optional_field_dim_mapping).values())
     if patch_size is not None:
         assert output.ndim == 2
         assert output.shape[-1] == patch_size
@@ -270,9 +266,9 @@ def test_patch_size_sequence(
         + PackFields("target", fields=("target",))
         + Patchify(max_patch_size, fields=fields)
     )(data_entry)
-    transformed_data_entry = SequencifyField(
-        field="patch_size", target_field="target", target_axis=1
-    )(data_entry.copy())
+    transformed_data_entry = SequencifyField(field="patch_size", target_field="target", target_axis=1)(
+        data_entry.copy()
+    )
 
     patch_size = data_entry["patch_size"]
     transformed_patch_size = transformed_data_entry["patch_size"]

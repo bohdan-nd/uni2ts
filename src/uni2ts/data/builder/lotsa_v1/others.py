@@ -46,12 +46,8 @@ MULTI_SAMPLE_DATASETS = [
 
 
 def _get_kdd_2022_gen_func(data_path: Path) -> tuple[GenFunc, Features]:
-    df = pd.read_csv(
-        data_path / "wtbdata_245days.csv", header=0, skiprows=lambda x: x == 1
-    )
-    df["timestamp"] = pd.to_datetime("2020-01-01 " + df["Tmstamp"]) + (
-        df["Day"] - 1
-    ) * pd.Timedelta("1D")
+    df = pd.read_csv(data_path / "wtbdata_245days.csv", header=0, skiprows=lambda x: x == 1)
+    df["timestamp"] = pd.to_datetime("2020-01-01 " + df["Tmstamp"]) + (df["Day"] - 1) * pd.Timedelta("1D")
 
     def gen_func() -> Generator[dict[str, Any], None, None]:
         for idx in df["TurbID"].unique():
@@ -125,9 +121,7 @@ def _get_favorita_sales_gen_func(
 ) -> tuple[GenFunc, Features]:
     train = pd.read_csv(
         data_path / "train.csv",
-        dtype=dict(
-            id=int, store_nbr=int, item_nbr=int, unit_sales=int, onpromotion=bool
-        ),
+        dtype=dict(id=int, store_nbr=int, item_nbr=int, unit_sales=int, onpromotion=bool),
         parse_dates=["date"],
         engine="pyarrow",
     )
@@ -136,14 +130,8 @@ def _get_favorita_sales_gen_func(
         for store_nbr in train.store_nbr.unique():
             store = train.query(f"store_nbr == {store_nbr}")
             for item_nbr in store.item_nbr.unique():
-                item = (
-                    store.query(f"item_nbr == {item_nbr}")
-                    .set_index("date")
-                    .sort_index()
-                )
-                item = item.reindex(
-                    pd.date_range(start=item.index[0], end=item.index[-1], freq="1D")
-                )
+                item = store.query(f"item_nbr == {item_nbr}").set_index("date").sort_index()
+                item = item.reindex(pd.date_range(start=item.index[0], end=item.index[-1], freq="1D"))
 
                 missing_pct = item.unit_sales.isnull().sum() / len(item)
 
@@ -175,14 +163,8 @@ def _get_favorita_transactions_gen_func(data_path: Path) -> tuple[GenFunc, Featu
 
     def gen_func() -> Generator[dict[str, Any], None, None]:
         for store_nbr in transactions.store_nbr.unique():
-            store = (
-                transactions.query(f"store_nbr == {store_nbr}")
-                .set_index("date")
-                .sort_index()
-            )
-            store = store.reindex(
-                pd.date_range(start=store.index[0], end=store.index[-1], freq="1D")
-            )
+            store = transactions.query(f"store_nbr == {store_nbr}").set_index("date").sort_index()
+            store = store.reindex(pd.date_range(start=store.index[0], end=store.index[-1], freq="1D"))
             yield dict(
                 item_id=f"{store_nbr}",
                 start=store.index[0],
@@ -202,24 +184,14 @@ def _get_favorita_transactions_gen_func(data_path: Path) -> tuple[GenFunc, Featu
     return gen_func, features
 
 
-def _get_restaurant_gen_func(
-    data_path: Path, missing_threshold: float = 0.5
-) -> tuple[GenFunc, Features]:
+def _get_restaurant_gen_func(data_path: Path, missing_threshold: float = 0.5) -> tuple[GenFunc, Features]:
     air_visit_data = pd.read_csv(data_path / "air_visit_data.csv")
     air_visit_data["visit_date"] = pd.to_datetime(air_visit_data["visit_date"])
 
     def gen_func() -> Generator[dict[str, Any], None, None]:
         for air_store_id in air_visit_data.air_store_id.unique():
-            air_store = (
-                air_visit_data.query(f'air_store_id == "{air_store_id}"')
-                .set_index("visit_date")
-                .sort_index()
-            )
-            air_store = air_store.reindex(
-                pd.date_range(
-                    start=air_store.index[0], end=air_store.index[-1], freq="1D"
-                )
-            )
+            air_store = air_visit_data.query(f'air_store_id == "{air_store_id}"').set_index("visit_date").sort_index()
+            air_store = air_store.reindex(pd.date_range(start=air_store.index[0], end=air_store.index[-1], freq="1D"))
             missing_pct = air_store.visitors.isnull().sum() / len(air_store)
             if missing_pct > missing_threshold:
                 continue
@@ -275,11 +247,7 @@ def _get_china_air_quality_gen_func(data_path: Path) -> tuple[GenFunc, Features]
 
     def gen_func() -> Generator[dict[str, Any], None, None]:
         for station_id in airquality.station_id.unique():
-            station = (
-                airquality.query(f"station_id == {station_id}")
-                .set_index("time")
-                .sort_index()
-            )
+            station = airquality.query(f"station_id == {station_id}").set_index("time").sort_index()
             station = station.reindex(
                 pd.date_range(
                     start=station.index[0],
@@ -377,23 +345,12 @@ def _get_beijing_air_quality_gen_func(data_path: Path) -> tuple[GenFunc, Feature
 
 
 def _get_residential_load_power_gen_func(data_path: Path) -> tuple[GenFunc, Features]:
-    units = [
-        file.stem
-        for file in (data_path / "anonymous_public_load_power_data_per_unit").glob(
-            "*.rds"
-        )
-    ]
+    units = [file.stem for file in (data_path / "anonymous_public_load_power_data_per_unit").glob("*.rds")]
 
     def gen_func() -> Generator[dict[str, Any], None, None]:
         for unit in units:
-            load_power = read_r(
-                data_path / f"anonymous_public_load_power_data_per_unit/{unit}.rds"
-            )[None]
-            load_power = (
-                load_power.drop_duplicates(subset="utc", keep="last")
-                .set_index("utc")
-                .sort_index()
-            )
+            load_power = read_r(data_path / f"anonymous_public_load_power_data_per_unit/{unit}.rds")[None]
+            load_power = load_power.drop_duplicates(subset="utc", keep="last").set_index("utc").sort_index()
             load_power = load_power.reindex(
                 pd.date_range(
                     start=load_power.index[0],
@@ -425,23 +382,12 @@ def _get_residential_load_power_gen_func(data_path: Path) -> tuple[GenFunc, Feat
 
 
 def _get_residential_pv_power_gen_func(data_path: Path) -> tuple[GenFunc, Features]:
-    units = [
-        file.stem
-        for file in (data_path / "anonymous_public_pv_power_data_per_unit").glob(
-            "*.rds"
-        )
-    ]
+    units = [file.stem for file in (data_path / "anonymous_public_pv_power_data_per_unit").glob("*.rds")]
 
     def gen_func() -> Generator[dict[str, Any], None, None]:
         for unit in units:
-            pv_power = read_r(
-                data_path / f"anonymous_public_pv_power_data_per_unit/{unit}.rds"
-            )[None]
-            pv_power = (
-                pv_power.drop_duplicates(subset="utc", keep="last")
-                .set_index("utc")
-                .sort_index()
-            )
+            pv_power = read_r(data_path / f"anonymous_public_pv_power_data_per_unit/{unit}.rds")[None]
+            pv_power = pv_power.drop_duplicates(subset="utc", keep="last").set_index("utc").sort_index()
             pv_power = pv_power.reindex(
                 pd.date_range(
                     start=pv_power.index[0],
@@ -476,15 +422,9 @@ def _get_cdc_fluview_ilinet_gen_func(data_path: Path) -> tuple[GenFunc, Features
 
     def gen_func() -> Generator[dict[str, Any], None, None]:
         for dataset in (national, hhs, census, state):
-            dataset["date"] = pd.to_datetime(
-                (dataset.YEAR * 100 + dataset.WEEK).astype(str) + "0", format="%Y%W%w"
-            )
+            dataset["date"] = pd.to_datetime((dataset.YEAR * 100 + dataset.WEEK).astype(str) + "0", format="%Y%W%w")
             for region in dataset.REGION.unique():
-                region_ds = (
-                    dataset.query(f'REGION == "{region}"')
-                    .set_index("date")
-                    .sort_index()
-                )
+                region_ds = dataset.query(f'REGION == "{region}"').set_index("date").sort_index()
 
                 if region_ds["REGION TYPE"].iloc[0] == "National":
                     item_id = "national"
@@ -529,52 +469,24 @@ def _get_cdc_fluview_ilinet_gen_func(data_path: Path) -> tuple[GenFunc, Features
 
 
 def _get_cdc_fluview_who_nrevss_gen_func(data_path: Path) -> tuple[GenFunc, Features]:
-    national_prior = pd.read_csv(
-        data_path / "National/WHO_NREVSS_Combined_prior_to_2015_16.csv", skiprows=1
-    )
-    national_public_health = pd.read_csv(
-        data_path / "National/WHO_NREVSS_Public_Health_Labs.csv", skiprows=1
-    )
-    national_clinical_labs = pd.read_csv(
-        data_path / "National/WHO_NREVSS_Clinical_Labs.csv", skiprows=1
-    )
-    hhs_prior = pd.read_csv(
-        data_path / "HHS/WHO_NREVSS_Combined_prior_to_2015_16.csv", skiprows=1
-    )
-    hhs_public_health = pd.read_csv(
-        data_path / "HHS/WHO_NREVSS_Public_Health_Labs.csv", skiprows=1
-    )
-    hhs_clinical_labs = pd.read_csv(
-        data_path / "HHS/WHO_NREVSS_Clinical_Labs.csv", skiprows=1
-    )
-    census_prior = pd.read_csv(
-        data_path / "Census/WHO_NREVSS_Combined_prior_to_2015_16.csv", skiprows=1
-    )
-    census_public_health = pd.read_csv(
-        data_path / "Census/WHO_NREVSS_Public_Health_Labs.csv", skiprows=1
-    )
-    census_clinical_labs = pd.read_csv(
-        data_path / "Census/WHO_NREVSS_Clinical_Labs.csv", skiprows=1
-    )
-    state_prior = pd.read_csv(
-        data_path / "State/WHO_NREVSS_Combined_prior_to_2015_16.csv", skiprows=1
-    )
-    state_public_health = pd.read_csv(
-        data_path / "State/WHO_NREVSS_Public_Health_Labs.csv", skiprows=1
-    )
-    state_clinical_labs = pd.read_csv(
-        data_path / "State/WHO_NREVSS_Clinical_Labs.csv", skiprows=1
-    )
+    national_prior = pd.read_csv(data_path / "National/WHO_NREVSS_Combined_prior_to_2015_16.csv", skiprows=1)
+    national_public_health = pd.read_csv(data_path / "National/WHO_NREVSS_Public_Health_Labs.csv", skiprows=1)
+    national_clinical_labs = pd.read_csv(data_path / "National/WHO_NREVSS_Clinical_Labs.csv", skiprows=1)
+    hhs_prior = pd.read_csv(data_path / "HHS/WHO_NREVSS_Combined_prior_to_2015_16.csv", skiprows=1)
+    hhs_public_health = pd.read_csv(data_path / "HHS/WHO_NREVSS_Public_Health_Labs.csv", skiprows=1)
+    hhs_clinical_labs = pd.read_csv(data_path / "HHS/WHO_NREVSS_Clinical_Labs.csv", skiprows=1)
+    census_prior = pd.read_csv(data_path / "Census/WHO_NREVSS_Combined_prior_to_2015_16.csv", skiprows=1)
+    census_public_health = pd.read_csv(data_path / "Census/WHO_NREVSS_Public_Health_Labs.csv", skiprows=1)
+    census_clinical_labs = pd.read_csv(data_path / "Census/WHO_NREVSS_Clinical_Labs.csv", skiprows=1)
+    state_prior = pd.read_csv(data_path / "State/WHO_NREVSS_Combined_prior_to_2015_16.csv", skiprows=1)
+    state_public_health = pd.read_csv(data_path / "State/WHO_NREVSS_Public_Health_Labs.csv", skiprows=1)
+    state_clinical_labs = pd.read_csv(data_path / "State/WHO_NREVSS_Clinical_Labs.csv", skiprows=1)
 
     state_public_health["YEAR"] = (
-        state_public_health["SEASON_DESCRIPTION"]
-        .apply(lambda x: x[len("Season ") : len("Season 2015")])
-        .astype(int)
+        state_public_health["SEASON_DESCRIPTION"].apply(lambda x: x[len("Season ") : len("Season 2015")]).astype(int)
     )
     state_public_health["WEEK"] = (
-        state_public_health["SEASON_DESCRIPTION"]
-        .apply(lambda x: x[len("Season 2015-") :])
-        .astype(int)
+        state_public_health["SEASON_DESCRIPTION"].apply(lambda x: x[len("Season 2015-") :]).astype(int)
     )
 
     def gen_func() -> Generator[dict[str, Any], None, None]:
@@ -619,13 +531,9 @@ def _get_cdc_fluview_who_nrevss_gen_func(data_path: Path) -> tuple[GenFunc, Feat
                 + prior["A (Unable to Subtype)"]
             )
             public_health.loc[:, "A"] = (
-                public_health["A (2009 H1N1)"]
-                + public_health["A (H3)"]
-                + public_health["A (Subtyping not Performed)"]
+                public_health["A (2009 H1N1)"] + public_health["A (H3)"] + public_health["A (Subtyping not Performed)"]
             )
-            public_health.loc[:, "B"] = (
-                public_health["B"] + public_health["BVic"] + public_health["BYam"]
-            )
+            public_health.loc[:, "B"] = public_health["B"] + public_health["BVic"] + public_health["BYam"]
 
             prior = prior[
                 [
@@ -651,23 +559,15 @@ def _get_cdc_fluview_who_nrevss_gen_func(data_path: Path) -> tuple[GenFunc, Feat
                     "REGION TYPE",
                 ]
             ]
-            post.loc[:, "TOTAL SPECIMENS"] = (
-                post["TOTAL SPECIMENS"] + clinical_labs["TOTAL SPECIMENS"]
-            )
+            post.loc[:, "TOTAL SPECIMENS"] = post["TOTAL SPECIMENS"] + clinical_labs["TOTAL SPECIMENS"]
             post.loc[:, "A"] = post["A"] + clinical_labs["TOTAL A"]
             post.loc[:, "B"] = post["B"] + clinical_labs["TOTAL B"]
 
             combined = pd.concat([prior, post])
-            combined["date"] = pd.to_datetime(
-                (combined.YEAR * 100 + combined.WEEK).astype(str) + "0", format="%Y%W%w"
-            )
+            combined["date"] = pd.to_datetime((combined.YEAR * 100 + combined.WEEK).astype(str) + "0", format="%Y%W%w")
 
             for region in combined.REGION.unique():
-                region_ds = (
-                    combined.query(f'REGION == "{region}"')
-                    .set_index("date")
-                    .sort_index()
-                )
+                region_ds = combined.query(f'REGION == "{region}"').set_index("date").sort_index()
 
                 if region_ds["REGION TYPE"].iloc[0] == "National":
                     item_id = "national"
@@ -680,11 +580,7 @@ def _get_cdc_fluview_who_nrevss_gen_func(data_path: Path) -> tuple[GenFunc, Feat
                 else:
                     raise ValueError
 
-                target = (
-                    region_ds[["TOTAL SPECIMENS", "A", "B", "H3N2v"]]
-                    .to_numpy()
-                    .astype(np.float32)
-                )
+                target = region_ds[["TOTAL SPECIMENS", "A", "B", "H3N2v"]].to_numpy().astype(np.float32)
 
                 if target.shape[0] < 16:
                     continue

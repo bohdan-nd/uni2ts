@@ -14,8 +14,10 @@
 #  limitations under the License.
 
 from ._base import ConcatDatasetBuilder, DatasetBuilder
+from .simple_polars import SimplePolarsDatasetBuilder
 
 __all__ = [
     "DatasetBuilder",
     "ConcatDatasetBuilder",
+    "SimplePolarsDatasetBuilder"
 ]

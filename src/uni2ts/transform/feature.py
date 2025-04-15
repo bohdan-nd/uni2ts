@@ -52,16 +52,12 @@ class AddVariateIndex(CollectFuncMixin, CheckArrNDimMixin, Transformation):
         )
         return data_entry
 
-    def _generate_variate_id(
-        self, data_entry: dict[str, Any], field: str
-    ) -> np.ndarray:
+    def _generate_variate_id(self, data_entry: dict[str, Any], field: str) -> np.ndarray:
         arr = data_entry[field]
         self.check_ndim(field, arr, self.expected_ndim)
         dim, time = arr.shape[:2]
         if self.counter + dim > self.max_dim:
-            raise ValueError(
-                f"Variate ({self.counter + dim}) exceeds maximum variate {self.max_dim}. "
-            )
+            raise ValueError(f"Variate ({self.counter + dim}) exceeds maximum variate {self.max_dim}. ")
         field_dim_id = repeat(
             np.asarray(self.dimensions[self.counter : self.counter + dim], dtype=int),
             "var -> var time",

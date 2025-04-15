@@ -83,9 +83,9 @@ class MoiraiMoEForecast(L.LightningModule):
         patch_size: int = 16,
         num_samples: int = 100,
     ):
-        assert (module is not None) or (
-            module_kwargs is not None
-        ), "if module is not provided, module_kwargs is required"
+        assert (module is not None) or (module_kwargs is not None), (
+            "if module is not provided, module_kwargs is required"
+        )
         super().__init__()
         self.save_hyperparameters(ignore=["module"])
         self.module = MoiraiMoEModule(**module_kwargs) if module is None else module
@@ -242,15 +242,9 @@ class MoiraiMoEForecast(L.LightningModule):
         past_observed_target: Bool[torch.Tensor, "batch past_time tgt"],
         past_is_pad: Bool[torch.Tensor, "batch past_time"],
         feat_dynamic_real: Optional[Float[torch.Tensor, "batch time feat"]] = None,
-        observed_feat_dynamic_real: Optional[
-            Float[torch.Tensor, "batch time feat"]
-        ] = None,
-        past_feat_dynamic_real: Optional[
-            Float[torch.Tensor, "batch past_time past_feat"]
-        ] = None,
-        past_observed_feat_dynamic_real: Optional[
-            Float[torch.Tensor, "batch past_time past_feat"]
-        ] = None,
+        observed_feat_dynamic_real: Optional[Float[torch.Tensor, "batch time feat"]] = None,
+        past_feat_dynamic_real: Optional[Float[torch.Tensor, "batch past_time past_feat"]] = None,
+        past_observed_feat_dynamic_real: Optional[Float[torch.Tensor, "batch past_time past_feat"]] = None,
         num_samples: Optional[int] = None,
     ) -> Float[torch.Tensor, "batch sample future_time *tgt"]:
         context_step = self.context_token_length(self.hparams.patch_size)
@@ -275,13 +269,9 @@ class MoiraiMoEForecast(L.LightningModule):
             past_feat_dynamic_real=past_feat_dynamic_real,
             past_observed_feat_dynamic_real=past_observed_feat_dynamic_real,
         )
-        patch_size = (
-            torch.ones_like(time_id, dtype=torch.long) * self.hparams.patch_size
-        )
+        patch_size = torch.ones_like(time_id, dtype=torch.long) * self.hparams.patch_size
 
-        pred_index = torch.arange(
-            start=context_step - 1, end=context_token, step=context_step
-        )
+        pred_index = torch.arange(start=context_step - 1, end=context_token, step=context_step)
         assign_index = torch.arange(
             start=context_token,
             end=context_token + predict_token,
@@ -300,9 +290,7 @@ class MoiraiMoEForecast(L.LightningModule):
             )
             preds = distr.sample(torch.Size((num_samples or self.hparams.num_samples,)))
             preds[..., assign_index, :] = preds[..., pred_index, :]
-            return self._format_preds(
-                self.hparams.patch_size, preds, self.hparams.target_dim
-            )
+            return self._format_preds(self.hparams.patch_size, preds, self.hparams.target_dim)
         else:
             distr = self.module(
                 target,
@@ -315,27 +303,13 @@ class MoiraiMoEForecast(L.LightningModule):
             )
             preds = distr.sample(torch.Size((self.hparams.num_samples,)))
 
-            expand_target = target.unsqueeze(0).repeat(
-                self.hparams.num_samples, 1, 1, 1
-            )
-            expand_prediction_mask = prediction_mask.unsqueeze(0).repeat(
-                self.hparams.num_samples, 1, 1
-            )
-            expand_observed_mask = observed_mask.unsqueeze(0).expand(
-                self.hparams.num_samples, -1, -1, -1
-            )
-            expand_sample_id = sample_id.unsqueeze(0).expand(
-                self.hparams.num_samples, -1, -1
-            )
-            expand_time_id = time_id.unsqueeze(0).expand(
-                self.hparams.num_samples, -1, -1
-            )
-            expand_variate_id = variate_id.unsqueeze(0).expand(
-                self.hparams.num_samples, -1, -1
-            )
-            expand_patch_size = patch_size.unsqueeze(0).expand(
-                self.hparams.num_samples, -1, -1
-            )
+            expand_target = target.unsqueeze(0).repeat(self.hparams.num_samples, 1, 1, 1)
+            expand_prediction_mask = prediction_mask.unsqueeze(0).repeat(self.hparams.num_samples, 1, 1)
+            expand_observed_mask = observed_mask.unsqueeze(0).expand(self.hparams.num_samples, -1, -1, -1)
+            expand_sample_id = sample_id.unsqueeze(0).expand(self.hparams.num_samples, -1, -1)
+            expand_time_id = time_id.unsqueeze(0).expand(self.hparams.num_samples, -1, -1)
+            expand_variate_id = variate_id.unsqueeze(0).expand(self.hparams.num_samples, -1, -1)
+            expand_patch_size = patch_size.unsqueeze(0).expand(self.hparams.num_samples, -1, -1)
 
             expand_target[..., assign_index, :] = preds[..., pred_index, :]
             expand_prediction_mask[..., assign_index] = False
@@ -362,9 +336,7 @@ class MoiraiMoEForecast(L.LightningModule):
 
                 remain_step -= 1
 
-            return self._format_preds(
-                self.hparams.patch_size, expand_target, self.hparams.target_dim
-            )
+            return self._format_preds(self.hparams.patch_size, expand_target, self.hparams.target_dim)
 
     @staticmethod
     def _patched_seq_pad(
@@ -388,18 +360,14 @@ class MoiraiMoEForecast(L.LightningModule):
         self,
         patch_size: int,
         past_observed_target: Bool[torch.Tensor, "batch past_seq tgt"],
-    ) -> tuple[
-        Int[torch.Tensor, "batch past_token"], Int[torch.Tensor, "batch future_token"]
-    ]:
+    ) -> tuple[Int[torch.Tensor, "batch past_token"], Int[torch.Tensor, "batch future_token"]]:
         past_seq_id = reduce(
             self._patched_seq_pad(patch_size, past_observed_target, -2, left=True),
             "... (seq patch) dim -> ... seq",
             "max",
             patch=patch_size,
         )
-        past_seq_id = torch.clamp(
-            past_seq_id.cummax(dim=-1).values.cumsum(dim=-1) - 1, min=0
-        )
+        past_seq_id = torch.clamp(past_seq_id.cummax(dim=-1).values.cumsum(dim=-1) - 1, min=0)
         batch_shape = " ".join(map(str, past_observed_target.shape[:-2]))
         future_seq_id = (
             repeat(
@@ -421,20 +389,12 @@ class MoiraiMoEForecast(L.LightningModule):
         past_observed_target: Bool[torch.Tensor, "batch past_time tgt"],
         past_is_pad: Bool[torch.Tensor, "batch past_time"],
         future_target: Optional[Float[torch.Tensor, "batch future_time tgt"]] = None,
-        future_observed_target: Optional[
-            Bool[torch.Tensor, "batch future_time tgt"]
-        ] = None,
+        future_observed_target: Optional[Bool[torch.Tensor, "batch future_time tgt"]] = None,
         future_is_pad: Optional[Bool[torch.Tensor, "batch future_time"]] = None,
         feat_dynamic_real: Optional[Float[torch.Tensor, "batch time feat"]] = None,
-        observed_feat_dynamic_real: Optional[
-            Float[torch.Tensor, "batch time feat"]
-        ] = None,
-        past_feat_dynamic_real: Optional[
-            Float[torch.Tensor, "batch past_time past_feat"]
-        ] = None,
-        past_observed_feat_dynamic_real: Optional[
-            Float[torch.Tensor, "batch past_time past_feat"]
-        ] = None,
+        observed_feat_dynamic_real: Optional[Float[torch.Tensor, "batch time feat"]] = None,
+        past_feat_dynamic_real: Optional[Float[torch.Tensor, "batch past_time past_feat"]] = None,
+        past_observed_feat_dynamic_real: Optional[Float[torch.Tensor, "batch past_time past_feat"]] = None,
     ) -> tuple[
         Float[torch.Tensor, "batch combine_seq patch"],  # target
         Bool[torch.Tensor, "batch combine_seq patch"],  # observed_mask
@@ -454,9 +414,7 @@ class MoiraiMoEForecast(L.LightningModule):
         prediction_mask = []
         dim_count = 0
 
-        past_seq_id, future_seq_id = self._generate_time_id(
-            patch_size, past_observed_target
-        )
+        past_seq_id, future_seq_id = self._generate_time_id(patch_size, past_observed_target)
 
         if future_target is None:
             future_target = torch.zeros(
@@ -480,9 +438,7 @@ class MoiraiMoEForecast(L.LightningModule):
                 ),
                 torch.nn.functional.pad(
                     rearrange(
-                        self._patched_seq_pad(
-                            patch_size, future_target, -2, left=False
-                        ),
+                        self._patched_seq_pad(patch_size, future_target, -2, left=False),
                         "... (seq patch) dim -> ... (dim seq) patch",
                         patch=patch_size,
                     ),
@@ -504,9 +460,7 @@ class MoiraiMoEForecast(L.LightningModule):
             [
                 torch.nn.functional.pad(
                     rearrange(
-                        self._patched_seq_pad(
-                            patch_size, past_observed_target, -2, left=True
-                        ),
+                        self._patched_seq_pad(patch_size, past_observed_target, -2, left=True),
                         "... (seq patch) dim -> ... (dim seq) patch",
                         patch=patch_size,
                     ),
@@ -514,9 +468,7 @@ class MoiraiMoEForecast(L.LightningModule):
                 ),
                 torch.nn.functional.pad(
                     rearrange(
-                        self._patched_seq_pad(
-                            patch_size, future_observed_target, -2, left=False
-                        ),
+                        self._patched_seq_pad(patch_size, future_observed_target, -2, left=False),
                         "... (seq patch) dim -> ... (dim seq) patch",
                         patch=patch_size,
                     ),
@@ -534,12 +486,7 @@ class MoiraiMoEForecast(L.LightningModule):
             [
                 repeat(
                     reduce(
-                        (
-                            self._patched_seq_pad(
-                                patch_size, past_is_pad, -1, left=True, value=1
-                            )
-                            == 0
-                        ).int(),
+                        (self._patched_seq_pad(patch_size, past_is_pad, -1, left=True, value=1) == 0).int(),
                         "... (seq patch) -> ... seq",
                         "max",
                         patch=patch_size,
@@ -549,12 +496,7 @@ class MoiraiMoEForecast(L.LightningModule):
                 ),
                 repeat(
                     reduce(
-                        (
-                            self._patched_seq_pad(
-                                patch_size, future_is_pad, -1, left=False, value=1
-                            )
-                            == 0
-                        ).int(),
+                        (self._patched_seq_pad(patch_size, future_is_pad, -1, left=False, value=1) == 0).int(),
                         "... (seq patch) -> ... seq",
                         "max",
                         patch=patch_size,
@@ -564,10 +506,7 @@ class MoiraiMoEForecast(L.LightningModule):
                 ),
             ]
         )
-        time_id.extend(
-            [past_seq_id] * past_target.shape[-1]
-            + [future_seq_id] * past_target.shape[-1]
-        )
+        time_id.extend([past_seq_id] * past_target.shape[-1] + [future_seq_id] * past_target.shape[-1])
         variate_id.extend(
             [
                 repeat(
@@ -586,17 +525,12 @@ class MoiraiMoEForecast(L.LightningModule):
         prediction_mask.extend(
             [
                 torch.zeros(
-                    batch_shape
-                    + (self.context_token_length(patch_size) * past_target.shape[-1],),
+                    batch_shape + (self.context_token_length(patch_size) * past_target.shape[-1],),
                     dtype=torch.bool,
                     device=device,
                 ),
                 torch.ones(
-                    batch_shape
-                    + (
-                        self.prediction_token_length(patch_size)
-                        * past_target.shape[-1],
-                    ),
+                    batch_shape + (self.prediction_token_length(patch_size) * past_target.shape[-1],),
                     dtype=torch.bool,
                     device=device,
                 ),
@@ -605,9 +539,7 @@ class MoiraiMoEForecast(L.LightningModule):
 
         if feat_dynamic_real is not None:
             if observed_feat_dynamic_real is None:
-                raise ValueError(
-                    "observed_feat_dynamic_real must be provided if feat_dynamic_real is provided"
-                )
+                raise ValueError("observed_feat_dynamic_real must be provided if feat_dynamic_real is provided")
 
             target.extend(
                 [
@@ -615,9 +547,7 @@ class MoiraiMoEForecast(L.LightningModule):
                         rearrange(
                             self._patched_seq_pad(
                                 patch_size,
-                                feat_dynamic_real[
-                                    ..., : self.hparams.context_length, :
-                                ],
+                                feat_dynamic_real[..., : self.hparams.context_length, :],
                                 -2,
                                 left=True,
                             ),
@@ -630,9 +560,7 @@ class MoiraiMoEForecast(L.LightningModule):
                         rearrange(
                             self._patched_seq_pad(
                                 patch_size,
-                                feat_dynamic_real[
-                                    ..., self.hparams.context_length :, :
-                                ],
+                                feat_dynamic_real[..., self.hparams.context_length :, :],
                                 -2,
                                 left=False,
                             ),
@@ -649,9 +577,7 @@ class MoiraiMoEForecast(L.LightningModule):
                         rearrange(
                             self._patched_seq_pad(
                                 patch_size,
-                                observed_feat_dynamic_real[
-                                    ..., : self.hparams.context_length, :
-                                ],
+                                observed_feat_dynamic_real[..., : self.hparams.context_length, :],
                                 -2,
                                 left=True,
                             ),
@@ -664,9 +590,7 @@ class MoiraiMoEForecast(L.LightningModule):
                         rearrange(
                             self._patched_seq_pad(
                                 patch_size,
-                                observed_feat_dynamic_real[
-                                    ..., self.hparams.context_length :, :
-                                ],
+                                observed_feat_dynamic_real[..., self.hparams.context_length :, :],
                                 -2,
                                 left=False,
                             ),
@@ -681,12 +605,7 @@ class MoiraiMoEForecast(L.LightningModule):
                 [
                     repeat(
                         reduce(
-                            (
-                                self._patched_seq_pad(
-                                    patch_size, past_is_pad, -1, left=True
-                                )
-                                == 0
-                            ).int(),
+                            (self._patched_seq_pad(patch_size, past_is_pad, -1, left=True) == 0).int(),
                             "... (seq patch) -> ... seq",
                             "max",
                             patch=patch_size,
@@ -695,31 +614,22 @@ class MoiraiMoEForecast(L.LightningModule):
                         dim=feat_dynamic_real.shape[-1],
                     ),
                     torch.ones(
-                        batch_shape
-                        + (
-                            self.prediction_token_length(patch_size)
-                            * feat_dynamic_real.shape[-1],
-                        ),
+                        batch_shape + (self.prediction_token_length(patch_size) * feat_dynamic_real.shape[-1],),
                         dtype=torch.long,
                         device=device,
                     ),
                 ]
             )
-            time_id.extend(
-                [past_seq_id] * feat_dynamic_real.shape[-1]
-                + [future_seq_id] * feat_dynamic_real.shape[-1]
-            )
+            time_id.extend([past_seq_id] * feat_dynamic_real.shape[-1] + [future_seq_id] * feat_dynamic_real.shape[-1])
             variate_id.extend(
                 [
                     repeat(
-                        torch.arange(feat_dynamic_real.shape[-1], device=device)
-                        + dim_count,
+                        torch.arange(feat_dynamic_real.shape[-1], device=device) + dim_count,
                         f"dim -> {' '.join(map(str, batch_shape))} (dim past)",
                         past=self.context_token_length(patch_size),
                     ),
                     repeat(
-                        torch.arange(feat_dynamic_real.shape[-1], device=device)
-                        + dim_count,
+                        torch.arange(feat_dynamic_real.shape[-1], device=device) + dim_count,
                         f"dim -> {' '.join(map(str, batch_shape))} (dim future)",
                         future=self.prediction_token_length(patch_size),
                     ),
@@ -729,20 +639,12 @@ class MoiraiMoEForecast(L.LightningModule):
             prediction_mask.extend(
                 [
                     torch.zeros(
-                        batch_shape
-                        + (
-                            self.context_token_length(patch_size)
-                            * feat_dynamic_real.shape[-1],
-                        ),
+                        batch_shape + (self.context_token_length(patch_size) * feat_dynamic_real.shape[-1],),
                         dtype=torch.bool,
                         device=device,
                     ),
                     torch.zeros(
-                        batch_shape
-                        + (
-                            self.prediction_token_length(patch_size)
-                            * feat_dynamic_real.shape[-1],
-                        ),
+                        batch_shape + (self.prediction_token_length(patch_size) * feat_dynamic_real.shape[-1],),
                         dtype=torch.bool,
                         device=device,
                     ),
@@ -757,9 +659,7 @@ class MoiraiMoEForecast(L.LightningModule):
             target.append(
                 torch.nn.functional.pad(
                     rearrange(
-                        self._patched_seq_pad(
-                            patch_size, past_feat_dynamic_real, -2, left=True
-                        ),
+                        self._patched_seq_pad(patch_size, past_feat_dynamic_real, -2, left=True),
                         "... (seq patch) dim -> ... (dim seq) patch",
                         patch=patch_size,
                     ),
@@ -769,9 +669,7 @@ class MoiraiMoEForecast(L.LightningModule):
             observed_mask.append(
                 torch.nn.functional.pad(
                     rearrange(
-                        self._patched_seq_pad(
-                            patch_size, past_observed_feat_dynamic_real, -2, left=True
-                        ),
+                        self._patched_seq_pad(patch_size, past_observed_feat_dynamic_real, -2, left=True),
                         "... (seq patch) dim -> ... (dim seq) patch",
                         patch=patch_size,
                     ),
@@ -781,12 +679,7 @@ class MoiraiMoEForecast(L.LightningModule):
             sample_id.append(
                 repeat(
                     reduce(
-                        (
-                            self._patched_seq_pad(
-                                patch_size, past_is_pad, -1, left=True
-                            )
-                            == 0
-                        ).int(),
+                        (self._patched_seq_pad(patch_size, past_is_pad, -1, left=True) == 0).int(),
                         "... (seq patch) -> ... seq",
                         "max",
                         patch=patch_size,
@@ -799,8 +692,7 @@ class MoiraiMoEForecast(L.LightningModule):
 
             variate_id.append(
                 repeat(
-                    torch.arange(past_feat_dynamic_real.shape[-1], device=device)
-                    + dim_count,
+                    torch.arange(past_feat_dynamic_real.shape[-1], device=device) + dim_count,
                     f"dim -> {' '.join(map(str, batch_shape))} (dim past)",
                     past=self.context_token_length(patch_size),
                 )
@@ -808,11 +700,7 @@ class MoiraiMoEForecast(L.LightningModule):
             dim_count += past_feat_dynamic_real.shape[-1]
             prediction_mask.append(
                 torch.zeros(
-                    batch_shape
-                    + (
-                        self.context_token_length(patch_size)
-                        * past_feat_dynamic_real.shape[-1],
-                    ),
+                    batch_shape + (self.context_token_length(patch_size) * past_feat_dynamic_real.shape[-1],),
                     dtype=torch.bool,
                     device=device,
                 )

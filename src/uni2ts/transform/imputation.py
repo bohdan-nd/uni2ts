@@ -24,18 +24,14 @@ from ._mixin import ApplyFuncMixin
 
 
 class ImputationMethod:
-    def __call__(
-        self, x: Num[np.ndarray, "length *dim"]
-    ) -> Num[np.ndarray, "length *dim"]: ...
+    def __call__(self, x: Num[np.ndarray, "length *dim"]) -> Num[np.ndarray, "length *dim"]: ...
 
 
 @dataclass(frozen=True)
 class DummyValueImputation(ImputationMethod):
     value: int | float | complex = 0.0
 
-    def __call__(
-        self, x: Num[np.ndarray, "length *dim"]
-    ) -> Num[np.ndarray, "length *dim"]:
+    def __call__(self, x: Num[np.ndarray, "length *dim"]) -> Num[np.ndarray, "length *dim"]:
         x[np.isnan(x)] = self.value
         return x
 
@@ -44,9 +40,7 @@ class DummyValueImputation(ImputationMethod):
 class LastValueImputation(ImputationMethod):
     value: int | float | complex = 0.0
 
-    def __call__(
-        self, x: Num[np.ndarray, "length *dim"]
-    ) -> Num[np.ndarray, "length *dim"]:
+    def __call__(self, x: Num[np.ndarray, "length *dim"]) -> Num[np.ndarray, "length *dim"]:
         x = x.T
         x[0:1][np.isnan(x[0:1])] = self.value
         mask = np.isnan(x)

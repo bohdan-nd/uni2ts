@@ -67,14 +67,8 @@ class LibCityDatasetBuilder(LOTSADatasetBuilder):
 
         with open(lib_city_path / f"{raw_dataset_name}/config.json") as f:
             config = json.load(f)
-        data_col = (
-            data_col
-            if len(data_col := config["info"]["data_col"]) == 1
-            else config["info"]["data_col"]
-        )
-        freq = to_offset(
-            pd.to_timedelta(f'{config["info"]["time_intervals"]}S')
-        ).freqstr
+        data_col = data_col if len(data_col := config["info"]["data_col"]) == 1 else config["info"]["data_col"]
+        freq = to_offset(pd.to_timedelta(f"{config['info']['time_intervals']}S")).freqstr
 
         try:
             df = pd.read_csv(
@@ -97,9 +91,7 @@ class LibCityDatasetBuilder(LOTSADatasetBuilder):
             ext_df = ext_df.set_index("time")
             ext_df = ext_df[config["info"]["ext_col"]]
             if pd.infer_freq(ext_df.index) is None:
-                ext_df = ext_df.reindex(
-                    pd.date_range(ext_df.index[0], ext_df.index[-1], freq=freq)
-                )
+                ext_df = ext_df.reindex(pd.date_range(ext_df.index[0], ext_df.index[-1], freq=freq))
             cov = ext_df.to_numpy()
             if cov.shape[-1] == 1:
                 cov = cov.squeeze(-1)
@@ -123,9 +115,7 @@ class LibCityDatasetBuilder(LOTSADatasetBuilder):
         past_feat_dynamic_real_feature_dict = {}
         if cov is not None:
             past_feat_dynamic_real_feature_dict["past_feat_dynamic_real"] = (
-                Sequence(Value("float"))
-                if cov.ndim == 1
-                else Sequence(Sequence(Value("float32")), length=cov.shape[0])
+                Sequence(Value("float")) if cov.ndim == 1 else Sequence(Sequence(Value("float32")), length=cov.shape[0])
             )
 
         def gen_func():
@@ -133,23 +123,22 @@ class LibCityDatasetBuilder(LOTSADatasetBuilder):
                 entity_df = df.query(f"entity_id == {idx}")
                 inferred_freq = pd.infer_freq(entity_df.index)
                 if inferred_freq is None:
-                    entity_df = entity_df.reindex(
-                        pd.date_range(
-                            entity_df.index[0], entity_df.index[-1], freq=freq
-                        )
-                    )
+                    entity_df = entity_df.reindex(pd.date_range(entity_df.index[0], entity_df.index[-1], freq=freq))
                 target = entity_df[data_col].to_numpy().astype(np.float32)
                 if target.ndim == 2:
                     if target.shape[-1] == 1:
                         target = target.squeeze(-1)
                     else:
                         target = target.T
-                yield dict(
-                    item_id=f"{idx}",
-                    start=entity_df.index[0],
-                    target=target,
-                    freq=freq,
-                ) | past_feat_dynamic_real_dict
+                yield (
+                    dict(
+                        item_id=f"{idx}",
+                        start=entity_df.index[0],
+                        target=target,
+                        freq=freq,
+                    )
+                    | past_feat_dynamic_real_dict
+                )
 
         hf_datasets = datasets.Dataset.from_generator(
             gen_func,

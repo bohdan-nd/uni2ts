@@ -72,10 +72,7 @@ def get_seasonality_list(freq: str) -> int:
 def forcast_batch(batch, device, context_len, align_const, model: VisionTS):
     # input batch: list of [L, ].
     # return: [B, H]
-    context = [
-        torch.tensor(imputation_nan(entry[-context_len:])).view((1, -1, 1)).to(device)
-        for entry in batch
-    ]
+    context = [torch.tensor(imputation_nan(entry[-context_len:])).view((1, -1, 1)).to(device) for entry in batch]
     try:
         context_list = [torch.concatenate(context, dim=0)]
     except RuntimeError:
@@ -128,16 +125,12 @@ def evaluate(
     elif test_setting == "lsf":
         get_dataset = partial(get_lsf_test_dataset, prediction_length=prediction_length)
     else:
-        raise NotImplementedError(
-            f"Cannot find the test setting {test_setting}. Please select from monash, pf, lsf."
-        )
+        raise NotImplementedError(f"Cannot find the test setting {test_setting}. Please select from monash, pf, lsf.")
     test_data, metadata = get_dataset(dataset)
     if test_setting != "lsf":
         # for monash and pf, the prediction length can be inferred.
         prediction_length = metadata.prediction_length
-    print(
-        f"{test_setting} setting - prediction length for {dataset}: {prediction_length}"
-    )
+    print(f"{test_setting} setting - prediction length for {dataset}: {prediction_length}")
 
     while True:
         try:
@@ -156,9 +149,7 @@ def evaluate(
                 best_valid_mae = float("inf")
                 best_valid_p = 1
                 for periodicity in seasonality_list:
-                    cur_context_len = convert_context_len(
-                        context_len, no_periodicity_context_len, periodicity
-                    )
+                    cur_context_len = convert_context_len(context_len, no_periodicity_context_len, periodicity)
                     model.update_config(
                         cur_context_len,
                         prediction_length,
@@ -172,25 +163,17 @@ def evaluate(
                         desc=f"Validate periodicity: {periodicity}",
                     ):
                         input_batch = [x["target"][:-prediction_length] for x in batch]
-                        label_batch = np.stack(
-                            [x["target"][-prediction_length:] for x in batch]
-                        )
-                        cur_forecast_samples = forcast_batch(
-                            input_batch, device, cur_context_len, align_const, model
-                        )
+                        label_batch = np.stack([x["target"][-prediction_length:] for x in batch])
+                        cur_forecast_samples = forcast_batch(input_batch, device, cur_context_len, align_const, model)
                         assert cur_forecast_samples.shape == label_batch.shape
                         cur_mae_list.append(np.abs(label_batch - cur_forecast_samples))
                     cur_valid_mae = np.mean(np.concatenate(cur_mae_list, axis=0))
                     if cur_valid_mae < best_valid_mae:
                         best_valid_p = periodicity
                         best_valid_mae = cur_valid_mae
-                        print(
-                            f"autotune: P = {periodicity} | valid mae = {cur_valid_mae}, accept!"
-                        )
+                        print(f"autotune: P = {periodicity} | valid mae = {cur_valid_mae}, accept!")
                     else:
-                        print(
-                            f"autotune: P = {periodicity} | valid mae = {cur_valid_mae}, reject!"
-                        )
+                        print(f"autotune: P = {periodicity} | valid mae = {cur_valid_mae}, reject!")
                 periodicity = best_valid_p
             elif periodicity == "freq":
                 periodicity = get_seasonality_list(metadata.freq)[0]
@@ -199,39 +182,27 @@ def evaluate(
 
             # Generate forecast samples
             forecast_samples = []
-            cur_context_len = convert_context_len(
-                context_len, no_periodicity_context_len, periodicity
-            )
+            cur_context_len = convert_context_len(context_len, no_periodicity_context_len, periodicity)
             print(f"Use periodicity = {periodicity}, context len = {cur_context_len}")
-            model.update_config(
-                cur_context_len, prediction_length, periodicity, norm_const, align_const
-            )
+            model.update_config(cur_context_len, prediction_length, periodicity, norm_const, align_const)
             for batch in tqdm(
                 list(batcher(test_data.input, batch_size=batch_size)),
                 desc="Forecasting",
             ):
                 batch = [x["target"] for x in batch]
-                cur_forecast_samples = forcast_batch(
-                    batch, device, cur_context_len, align_const, model
-                )
+                cur_forecast_samples = forcast_batch(batch, device, cur_context_len, align_const, model)
                 forecast_samples.append(cur_forecast_samples)
             forecast_samples = np.concatenate(forecast_samples, axis=0)
             break
         except torch.cuda.OutOfMemoryError:
-            print(
-                f"OutOfMemoryError at batch_size {batch_size}, reducing to {batch_size//2}"
-            )
+            print(f"OutOfMemoryError at batch_size {batch_size}, reducing to {batch_size // 2}")
             batch_size //= 2
 
     # Convert forecast samples into gluonts SampleForecast objects
     sample_forecasts = []
     for item, ts in zip(forecast_samples, test_data.input):
         forecast_start_date = ts["start"] + len(ts["target"])
-        sample_forecasts.append(
-            SampleForecast(
-                samples=np.reshape(item, (1, -1)), start_date=forecast_start_date
-            )
-        )
+        sample_forecasts.append(SampleForecast(samples=np.reshape(item, (1, -1)), start_date=forecast_start_date))
 
     # Evaluate
     metrics_df = evaluate_forecasts(
@@ -255,15 +226,9 @@ def evaluate(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Load a model and dataset, then make predictions."
-    )
-    parser.add_argument(
-        "--model", type=str, required=True, help="Name of the model to use"
-    )
-    parser.add_argument(
-        "--dataset", type=str, required=True, help="Name of the dataset to use"
-    )
+    parser = argparse.ArgumentParser(description="Load a model and dataset, then make predictions.")
+    parser.add_argument("--model", type=str, required=True, help="Name of the model to use")
+    parser.add_argument("--dataset", type=str, required=True, help="Name of the dataset to use")
     parser.add_argument(
         "--periodicity",
         type=str,
@@ -275,9 +240,7 @@ if __name__ == "__main__":
             + "(3) An integer: use the given periodicity."
         ),
     )
-    parser.add_argument(
-        "--save_dir", type=str, default="results", help="Directory to save the results"
-    )
+    parser.add_argument("--save_dir", type=str, default="results", help="Directory to save the results")
     parser.add_argument(
         "--checkpoint_dir",
         type=str,
@@ -291,9 +254,7 @@ if __name__ == "__main__":
         default=1000,
         help="Context length for data with periodicity = 1.",
     )
-    parser.add_argument(
-        "--batch_size", type=int, default=512, help="Batch size for generating samples"
-    )
+    parser.add_argument("--batch_size", type=int, default=512, help="Batch size for generating samples")
     parser.add_argument("--run_name", type=str, default="test", help="Name of the run")
     parser.add_argument(
         "--test_setting",
@@ -302,18 +263,10 @@ if __name__ == "__main__":
         choices=["monash", "lsf", "pf"],
         help="Name of the test setting",
     )
-    parser.add_argument(
-        "--pred_length", type=int, default=96, help="Prediction length for LSF dataset"
-    )
-    parser.add_argument(
-        "--norm_const", type=float, default=0.4, help="Hyperparameter (r) of VisionTS"
-    )
-    parser.add_argument(
-        "--align_const", type=float, default=0.4, help="Hyperparameter (c) of VisionTS"
-    )
-    parser.add_argument(
-        "--device", type=str, default="cuda:0", help="Device. cuda or cpu"
-    )
+    parser.add_argument("--pred_length", type=int, default=96, help="Prediction length for LSF dataset")
+    parser.add_argument("--norm_const", type=float, default=0.4, help="Hyperparameter (r) of VisionTS")
+    parser.add_argument("--align_const", type=float, default=0.4, help="Hyperparameter (c) of VisionTS")
+    parser.add_argument("--device", type=str, default="cuda:0", help="Device. cuda or cpu")
     parser.add_argument(
         "--vision_model_arch",
         type=str,

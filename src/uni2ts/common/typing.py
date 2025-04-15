@@ -42,9 +42,7 @@ BatchedString = Character[np.ndarray, "batch"]
 UnivarTimeSeries = Num[np.ndarray, "time"]
 MultivarTimeSeries = Num[np.ndarray, "var time"]
 Data = DateTime | String | UnivarTimeSeries | MultivarTimeSeries
-BatchedData = (
-    BatchedDateTime | BatchedString | list[UnivarTimeSeries] | list[MultivarTimeSeries]
-)
+BatchedData = BatchedDateTime | BatchedString | list[UnivarTimeSeries] | list[MultivarTimeSeries]
 FlattenedData = DateTime | String | list[UnivarTimeSeries]
 
 

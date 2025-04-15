@@ -57,6 +57,4 @@ def test_sample_dimension_shape(
             f"Dimension of transformed {f} should be less than the original. "
             f"Original: {len(data_entry[f])}, Transformed: {len(transformed_data_entry[f])}"
         )
-        assert (
-            len(transformed_data_entry[f]) == n
-        ), f"Dimension of transformed {f} should be {n}. "
+        assert len(transformed_data_entry[f]) == n, f"Dimension of transformed {f} should be {n}. "

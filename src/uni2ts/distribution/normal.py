@@ -54,9 +54,7 @@ class NormalFixedScaleOutput(DistributionOutput):
     @property
     def domain_map(
         self,
-    ) -> PyTree[
-        Callable[[Float[torch.Tensor, "*batch 1"]], Float[torch.Tensor, "*batch"]], "T"
-    ]:
+    ) -> PyTree[Callable[[Float[torch.Tensor, "*batch 1"]], Float[torch.Tensor, "*batch"]], "T"]:
         return dict(loc=self._loc)
 
     @staticmethod
@@ -69,7 +67,5 @@ class NormalFixedScaleOutput(DistributionOutput):
         validate_args: Optional[bool] = None,
     ) -> Normal:
         loc = distr_params["loc"]
-        distr_params["scale"] = torch.as_tensor(
-            self.scale, dtype=loc.dtype, device=loc.device
-        )
+        distr_params["scale"] = torch.as_tensor(self.scale, dtype=loc.dtype, device=loc.device)
         return self.distr_cls(**distr_params, validate_args=validate_args)

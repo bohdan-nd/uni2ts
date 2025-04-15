@@ -72,13 +72,9 @@ def test_moirai_pretrain(
     )
 
     target = torch.randn(batch_size, max_seq_len, max(patch_sizes))
-    observed_mask = torch.ones(
-        batch_size, max_seq_len, max(patch_sizes), dtype=torch.bool
-    )
+    observed_mask = torch.ones(batch_size, max_seq_len, max(patch_sizes), dtype=torch.bool)
     sample_id = torch.ones(batch_size, max_seq_len, dtype=torch.int64)
-    time_id = (
-        torch.arange(max_seq_len, dtype=torch.int64).unsqueeze(0).repeat(batch_size, 1)
-    )
+    time_id = torch.arange(max_seq_len, dtype=torch.int64).unsqueeze(0).repeat(batch_size, 1)
     variate_id = torch.randint(max_dim, (batch_size, max_seq_len), dtype=torch.long)
     prediction_mask = torch.cat(
         [
@@ -174,17 +170,12 @@ def test_moirai_transform_map(
 
     # check field
     for field in MoiraiPretrain.seq_fields:
-        assert (
-            field in transformed_data_entry
-        ), f"transformed_data_entry should have field {field}"
+        assert field in transformed_data_entry, f"transformed_data_entry should have field {field}"
 
     # check length
     seq_len = len(data_entry["target"])
     for k, v in transformed_data_entry.items():
-        assert len(v) == seq_len, (
-            f"transformed_data_entry[{k}] has length {len(v)} "
-            f"but should have length {seq_len}"
-        )
+        assert len(v) == seq_len, f"transformed_data_entry[{k}] has length {len(v)} but should have length {seq_len}"
 
 
 @pytest.mark.parametrize("batch_size", [1, 3])

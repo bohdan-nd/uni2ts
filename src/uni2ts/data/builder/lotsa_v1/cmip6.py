@@ -83,19 +83,13 @@ class CMIP6DatasetBuilder(LOTSADatasetBuilder):
 
         all_vars = {var: [] for var in CMIP6_VARIABLES}
         for shard in range(10):
-            np_file = np.load(
-                str(cmip6_path / f"train/{year}01010600-{year + 5}01010000_{shard}.npz")
-            )
+            np_file = np.load(str(cmip6_path / f"train/{year}01010600-{year + 5}01010000_{shard}.npz"))
             for var in CMIP6_VARIABLES:
                 all_vars[var].append(np_file[var][:, 0, :, :])
 
-        targets = np.stack(
-            [np.concatenate(all_vars[var]) for var in CMIP6_VARIABLES], axis=0
-        )
+        targets = np.stack([np.concatenate(all_vars[var]) for var in CMIP6_VARIABLES], axis=0)
 
-        def gen_func(
-            jobs: list[tuple[int, int]]
-        ) -> Generator[dict[str, Any], None, None]:
+        def gen_func(jobs: list[tuple[int, int]]) -> Generator[dict[str, Any], None, None]:
             for x, y in jobs:
                 yield dict(
                     item_id=f"{year}_{x}_{y}",
@@ -111,9 +105,7 @@ class CMIP6DatasetBuilder(LOTSADatasetBuilder):
                     item_id=Value("string"),
                     start=Value("timestamp[s]"),
                     freq=Value("string"),
-                    target=Sequence(
-                        Sequence(Value("float32")), length=len(CMIP6_VARIABLES)
-                    ),
+                    target=Sequence(Sequence(Value("float32")), length=len(CMIP6_VARIABLES)),
                 )
             ),
             gen_kwargs=dict(jobs=all_jobs),

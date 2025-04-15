@@ -45,9 +45,7 @@ def evaluate(
     elif test_setting == "lsf":
         get_dataset = partial(get_lsf_test_dataset, prediction_length=pred_length)
     else:
-        raise NotImplementedError(
-            f"Cannot find the test setting {test_setting}. Please select from monash, pf, lsf."
-        )
+        raise NotImplementedError(f"Cannot find the test setting {test_setting}. Please select from monash, pf, lsf.")
     test_data, metadata = get_dataset(dataset)
     prediction_length = metadata.prediction_length
 
@@ -68,18 +66,14 @@ def evaluate(
             forecast_samples = np.concatenate(forecast_samples)
             break
         except torch.cuda.OutOfMemoryError:
-            print(
-                f"OutOfMemoryError at batch_size {batch_size}, reducing to {batch_size//2}"
-            )
+            print(f"OutOfMemoryError at batch_size {batch_size}, reducing to {batch_size // 2}")
             batch_size //= 2
 
     # Convert forecast samples into gluonts SampleForecast objects
     sample_forecasts = []
     for item, ts in zip(forecast_samples, test_data.input):
         forecast_start_date = ts["start"] + len(ts["target"])
-        sample_forecasts.append(
-            SampleForecast(samples=item, start_date=forecast_start_date)
-        )
+        sample_forecasts.append(SampleForecast(samples=item, start_date=forecast_start_date))
 
     # Evaluate
     metrics_df = evaluate_forecasts(
@@ -108,24 +102,12 @@ def evaluate(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Load a model and dataset, then make predictions."
-    )
-    parser.add_argument(
-        "--model_path", type=str, required=True, help="Path to load the model"
-    )
-    parser.add_argument(
-        "--dataset", type=str, required=True, help="Name of the dataset to use"
-    )
-    parser.add_argument(
-        "--save_dir", type=str, default="results", help="Directory to save the results"
-    )
-    parser.add_argument(
-        "--num_samples", type=int, default=20, help="Number of samples to generate"
-    )
-    parser.add_argument(
-        "--batch_size", type=int, default=512, help="Batch size for generating samples"
-    )
+    parser = argparse.ArgumentParser(description="Load a model and dataset, then make predictions.")
+    parser.add_argument("--model_path", type=str, required=True, help="Path to load the model")
+    parser.add_argument("--dataset", type=str, required=True, help="Name of the dataset to use")
+    parser.add_argument("--save_dir", type=str, default="results", help="Directory to save the results")
+    parser.add_argument("--num_samples", type=int, default=20, help="Number of samples to generate")
+    parser.add_argument("--batch_size", type=int, default=512, help="Batch size for generating samples")
     parser.add_argument("--run_name", type=str, default="test", help="Name of the run")
     parser.add_argument(
         "--test_setting",
@@ -134,9 +116,7 @@ if __name__ == "__main__":
         choices=["monash", "lsf", "pf"],
         help="Name of the test setting",
     )
-    parser.add_argument(
-        "--pred_length", type=int, default=96, help="Prediction length for LSF dataset"
-    )
+    parser.add_argument("--pred_length", type=int, default=96, help="Prediction length for LSF dataset")
 
     args = parser.parse_args()
     # Load Chronos

@@ -192,9 +192,7 @@ def test_multiple_fields():
     batch = next(iter(packed_loader))
 
     assert all([f in batch for f in ("target", "sequence_id", "sample_id")])
-    assert all(
-        [batch[f].shape == (2, 10) for f in ("target", "sequence_id", "sample_id")]
-    )
+    assert all([batch[f].shape == (2, 10) for f in ("target", "sequence_id", "sample_id")])
 
 
 @pytest.mark.timeout(5)
@@ -300,9 +298,7 @@ def test_packing_single_dim(create_example, batch_size: int, batch_size_factor: 
     dataset = TSDataset(
         create_example=create_example,
         size=10,
-        transform=(
-            RemoveFields(["item_id", "freq", "start"]) + Transpose(fields=("target",))
-        ),
+        transform=(RemoveFields(["item_id", "freq", "start"]) + Transpose(fields=("target",))),
         length=10,
         target_dim=1,
         past_feat_dynamic_real_dim=None,
@@ -326,19 +322,14 @@ def test_packing_single_dim(create_example, batch_size: int, batch_size_factor: 
 
     assert isinstance(sample_id, torch.Tensor)
     assert isinstance(target, torch.Tensor)
-    assert np.all(
-        sample_id.numpy()
-        == np.asarray([1 for _ in range(10)] + [2 for _ in range(10)] + [0, 0])
-    )
+    assert np.all(sample_id.numpy() == np.asarray([1 for _ in range(10)] + [2 for _ in range(10)] + [0, 0]))
     assert np.allclose(target[sample_id == 1].numpy(), first_dataset_target)
     assert np.allclose(target[sample_id == 2].numpy(), second_dataset_target)
 
 
 @pytest.mark.parametrize("target_dim", [2, 3])
 @pytest.mark.parametrize("past_feat_dynamic_real_dim", [1, 2, 3])
-def test_packing_multi_dim(
-    create_example, target_dim: int, past_feat_dynamic_real_dim: Optional[int]
-):
+def test_packing_multi_dim(create_example, target_dim: int, past_feat_dynamic_real_dim: Optional[int]):
     dataset = TSDataset(
         create_example=create_example,
         size=10,
@@ -376,10 +367,7 @@ def test_packing_multi_dim(
     assert isinstance(sample_id, torch.Tensor)
     assert isinstance(target, torch.Tensor)
     assert isinstance(past_feat_dynamic_real, torch.Tensor)
-    assert np.all(
-        sample_id.numpy()
-        == np.asarray([1 for _ in range(10)] + [2 for _ in range(10)] + [0, 0])
-    )
+    assert np.all(sample_id.numpy() == np.asarray([1 for _ in range(10)] + [2 for _ in range(10)] + [0, 0]))
     assert np.allclose(target[sample_id == 1].numpy(), first_dataset_target)
     assert np.allclose(target[sample_id == 2].numpy(), second_dataset_target)
     assert np.allclose(

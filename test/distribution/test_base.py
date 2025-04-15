@@ -78,20 +78,13 @@ def test_multi_out_size_linear_proj(
         def check_shape(out_leaf: torch.Tensor, proj: MultiOutSizeLinear) -> bool:
             feat_size_out = out_leaf[out_feat_size == feat_size]
             try:
-                feat_size_weight = proj.weight[
-                    proj.out_features_ls.index(feat_size * proj.dim)
-                ]
+                feat_size_weight = proj.weight[proj.out_features_ls.index(feat_size * proj.dim)]
             except ValueError as e:
                 print(proj.out_features_ls, feat_size, proj.dim, feat_size * proj.dim)
                 raise e
-            feat_size_bias = (
-                proj.bias[proj.out_features_ls.index(feat_size * proj.dim)]
-                if proj.bias is not None
-                else 0
-            )
+            feat_size_bias = proj.bias[proj.out_features_ls.index(feat_size * proj.dim)] if proj.bias is not None else 0
             feat_size_gt = rearrange(
-                einsum(feat_size_weight, feat_size_x, "out inp, ... inp -> ... out")
-                + feat_size_bias,
+                einsum(feat_size_weight, feat_size_x, "out inp, ... inp -> ... out") + feat_size_bias,
                 "... (dim out_size) -> ... out_size dim",
                 out_size=max(out_features),
             )
@@ -100,35 +93,18 @@ def test_multi_out_size_linear_proj(
         def check_all_close(out_leaf: torch.Tensor, proj: MultiOutSizeLinear) -> bool:
             feat_size_out = out_leaf[out_feat_size == feat_size]
             try:
-                feat_size_weight = proj.weight[
-                    proj.out_features_ls.index(feat_size * proj.dim)
-                ]
+                feat_size_weight = proj.weight[proj.out_features_ls.index(feat_size * proj.dim)]
             except ValueError as e:
                 print(proj.out_features_ls, feat_size, proj.dim, feat_size * proj.dim)
                 raise e
-            feat_size_bias = (
-                proj.bias[proj.out_features_ls.index(feat_size * proj.dim)]
-                if proj.bias is not None
-                else 0
-            )
+            feat_size_bias = proj.bias[proj.out_features_ls.index(feat_size * proj.dim)] if proj.bias is not None else 0
             feat_size_gt = rearrange(
-                einsum(feat_size_weight, feat_size_x, "out inp, ... inp -> ... out")
-                + feat_size_bias,
+                einsum(feat_size_weight, feat_size_x, "out inp, ... inp -> ... out") + feat_size_bias,
                 "... (dim out_size) -> ... out_size dim",
                 out_size=max(out_features),
             )
             return torch.allclose(feat_size_gt, feat_size_out, atol=1e-6)
 
-        assert all(
-            tree_flatten(
-                tree_map_multi(check_shape, out, convert_to_container(out_proj.proj))
-            )[0]
-        )
+        assert all(tree_flatten(tree_map_multi(check_shape, out, convert_to_container(out_proj.proj)))[0])
 
-        assert all(
-            tree_flatten(
-                tree_map_multi(
-                    check_all_close, out, convert_to_container(out_proj.proj)
-                )
-            )[0]
-        )
+        assert all(tree_flatten(tree_map_multi(check_all_close, out, convert_to_container(out_proj.proj)))[0])
