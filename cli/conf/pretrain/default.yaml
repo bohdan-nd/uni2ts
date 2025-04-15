@@ -20,6 +20,7 @@ trainer:
   precision: 32
   logger:
       _target_: lightning.pytorch.loggers.WandbLogger
+      project: "photofm_pretraining"
       save_dir: ${hydra:runtime.output_dir}
   callbacks:
     - _target_: lightning.pytorch.callbacks.LearningRateMonitor
