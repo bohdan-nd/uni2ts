@@ -11,7 +11,7 @@ from torch.utils.data import Dataset
 
 from uni2ts.common.env import env
 from uni2ts.data.dataset import EvalDataset, SampleTimeSeriesType, TimeSeriesDataset
-from uni2ts.data.indexer import HuggingFaceDatasetIndexer, TensorHuggingFaceDatasetIndexer
+from uni2ts.data.indexer import HuggingFaceDatasetIndexer
 from uni2ts.transform import Transformation
 import os
 from functools import partial
@@ -20,17 +20,17 @@ from tqdm import tqdm
 from ._base import DatasetBuilder
 from concurrent.futures import ProcessPoolExecutor
 
-ID_COLUMN = "objectid"
-TIMESTEMP_COLUMN = "mjd"
-BANDS = ["r", "g", "i"]
-BAND_TO_INTEGER = {"r":0, "g": 1, "i": 2} 
-
-HF_ID_COLUMN = "item_id"
+ID_COLUMN = "item_id"
 FREQ_COLUMN = "freq"
 START_COLUMN = "start"
 MAG_COLUMN = "mag"
 MAGERROR_COLUMN = "magerr"
 BAND_COLUMN = "bands"
+
+RAW_ID_COLUMN = "objectid"
+TIMESTEMP_COLUMN = "mjd"
+BANDS = ["r", "g", "i"]
+BAND_TO_INTEGER = {"r": 0, "g": 1, "i": 2}
 
 
 def mjd_to_unix_timestemp(timestemp):
@@ -42,8 +42,10 @@ def _concat_non_null_columns_expr(columns: list[str]) -> pl.Expr:
         [pl.when(pl.col(column).is_not_null()).then(pl.col(column)).otherwise(pl.lit([])) for column in columns]
     )
 
+
 def _sort_columns_by_columns_expr(columns_to_sort: list[str], ref_column: str) -> pl.Expr:
     return pl.col(columns_to_sort).list.gather(pl.col(ref_column).list.eval(pl.element().arg_sort()))
+
 
 def _transform_polars(lf: pl.LazyFrame, offset: float, end: float, freq: str) -> pl.LazyFrame:
     rows = lf.select(pl.len()).collect().item()
@@ -51,8 +53,8 @@ def _transform_polars(lf: pl.LazyFrame, offset: float, end: float, freq: str) ->
     length = int(rows * end) - offset_int
 
     lf = lf.slice(offset_int, length)
-    
-    select_id_expr = pl.col(ID_COLUMN)
+
+    select_id_expr = pl.col(RAW_ID_COLUMN)
 
     mag_columns = [f"{MAG_COLUMN}_{band}" for band in BANDS]
     concat_mag_expr = _concat_non_null_columns_expr(mag_columns)
@@ -66,13 +68,15 @@ def _transform_polars(lf: pl.LazyFrame, offset: float, end: float, freq: str) ->
     timestemp_columns_to_band = [(f"{TIMESTEMP_COLUMN}_{band}", band) for band in BANDS]
 
     generate_bands_expr = [
-        pl.when(pl.col(col_name).is_not_null()).then(pl.lit(BAND_TO_INTEGER[band]).repeat_by(pl.col(col_name).list.len()))
+        pl.when(pl.col(col_name).is_not_null()).then(
+            pl.lit(BAND_TO_INTEGER[band]).repeat_by(pl.col(col_name).list.len())
+        )
         for col_name, band in timestemp_columns_to_band
     ]
     concat_bands = pl.concat_list(generate_bands_expr)
 
     lf = lf.select(
-        select_id_expr.alias(HF_ID_COLUMN),
+        select_id_expr.alias(ID_COLUMN),
         concat_mag_expr.alias(MAG_COLUMN),
         concat_magerror_expr.alias(MAGERROR_COLUMN),
         concat_timestemp_expr.alias(TIMESTEMP_COLUMN),
@@ -93,7 +97,7 @@ def _transform_polars(lf: pl.LazyFrame, offset: float, end: float, freq: str) ->
 
     features = Features(
         {
-            HF_ID_COLUMN: Value("string"),
+            ID_COLUMN: Value("string"),
             START_COLUMN: Value("timestamp[ms]"),
             FREQ_COLUMN: Value("string"),
             TIMESTEMP_COLUMN: Sequence(Value("float32")),
@@ -105,25 +109,28 @@ def _transform_polars(lf: pl.LazyFrame, offset: float, end: float, freq: str) ->
 
     return lf, features
 
+
 def _load_and_transform_polars(path, offset: float, end: float, freq: str) -> datasets.Dataset:
     lf = pl.scan_parquet(path)
     lf, features = _transform_polars(lf, offset, end, freq)
     df = lf.collect()
 
     dataset = datasets.Dataset.from_polars(df, features=features)
-    
-    return dataset
-    
 
-def _create_hf_dataset_from_polars(files: List[str], offset: float, end: float, freq: str = "H", max_workers: Optional[int] = None) -> datasets.Dataset:
-    polars_transform_fun = partial(_load_and_transform_polars, offset = offset, end = end, freq = freq)
-    
+    return dataset
+
+
+def _create_hf_dataset_from_polars(
+    files: List[str], offset: float, end: float, freq: str = "H", max_workers: Optional[int] = None
+) -> datasets.Dataset:
+    polars_transform_fun = partial(_load_and_transform_polars, offset=offset, end=end, freq=freq)
+
     if not max_workers:
         max_workers = max(1, os.cpu_count() - 1)
 
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
-        dataset = list(tqdm(executor.map(polars_transform_fun, files), total = len(files)))
-        
+        dataset = list(tqdm(executor.map(polars_transform_fun, files), total=len(files)))
+
     dataset = datasets.concatenate_datasets(dataset)
 
     return dataset
@@ -168,10 +175,10 @@ class SimplePolarsDatasetBuilder(DatasetBuilder):
     def __post_init__(self):
         self.storage_path = Path(self.storage_path)
 
-    def build_dataset(self, folder_path: Path, offset: float, end: float, freq: str):        
+    def build_dataset(self, folder_path: Path, offset: float, end: float, freq: str):
         polars_files = _select_parquet_files(folder_path)
         hf_dataset = _create_hf_dataset_from_polars(polars_files, offset, end, freq)
-        
+
         hf_dataset.info.dataset_name = self.dataset
         hf_dataset.info.description = {"band_to_integer": BAND_TO_INTEGER}
         hf_dataset.save_to_disk(str(self.storage_path / self.dataset))
@@ -183,7 +190,7 @@ class SimplePolarsDatasetBuilder(DatasetBuilder):
         # hf_dataset.set_transform(_transform_to_uni2ts_format)
 
         return TimeSeriesDataset(
-            TensorHuggingFaceDatasetIndexer(hf_dataset),
+            HuggingFaceDatasetIndexer(hf_dataset),
             transform=transform_map[self.dataset](),
             dataset_weight=self.weight,
             sample_time_series=self.sample_time_series,
@@ -207,7 +214,7 @@ class SimpleEvalDatasetBuilder(DatasetBuilder):
     def build_dataset(self, folder_path: Path, offset: float, end: float, freq: str):
         polars_files = _select_parquet_files(folder_path)
         hf_dataset = _create_hf_dataset_from_polars(polars_files, offset, end, freq)
-        
+
         hf_dataset.info.dataset_name = self.dataset
         hf_dataset.save_to_disk(str(self.storage_path / self.dataset))
 
@@ -219,7 +226,7 @@ class SimpleEvalDatasetBuilder(DatasetBuilder):
 
         return EvalDataset(
             self.windows,
-            TensorHuggingFaceDatasetIndexer(hf_dataset),
+            HuggingFaceDatasetIndexer(hf_dataset),
             transform=transform_map[self.dataset](
                 offset=self.offset,
                 distance=self.distance,
@@ -232,7 +239,7 @@ class SimpleEvalDatasetBuilder(DatasetBuilder):
 
 def build_datasets(args):
     dataset_builder = SimplePolarsDatasetBuilder(dataset=args.dataset_name)
-    dataset_builder.build_dataset(args.folder_path, offset = 0.0, end = args.split_ratio, freq = args.freq)
+    dataset_builder.build_dataset(args.folder_path, offset=0.0, end=args.split_ratio, freq=args.freq)
 
     eval_dataset_builder = SimpleEvalDatasetBuilder(
         dataset=f"{args.dataset_name}_eval",

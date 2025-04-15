@@ -130,57 +130,57 @@ class TensorHuggingFaceDatasetIndexer(HuggingFaceDatasetIndexer):
         :param uniform: whether the underlying data has uniform length
         """
         super().__init__(dataset=dataset, uniform=uniform)
-        
+
         self.tensor_key = tensor_key
 
     def _getitem_int(self, idx: int) -> dict[str, Data]:
         non_seqs = self.dataset[idx]
         pa_subtable = query_table(self.dataset.data, idx, indices=self.dataset._indices)
         sequences = [self._pa_column_to_numpy(pa_subtable, col)[0] for col in self.seq_cols]
-        
-        data = np.vstack(sequences) # [features, length]
+
+        data = np.vstack(sequences)  # [features, length]
         seqs = {self.tensor_key: data}
-        
+
         return non_seqs | seqs
 
     def _getitem_iterable(self, idx: Iterable[int]) -> dict[str, BatchedData]:
         non_seqs = self.dataset[idx]
         pa_subtable = query_table(self.dataset.data, idx, indices=self.dataset._indices)
         sequences = [self._pa_column_to_numpy(pa_subtable, col) for col in self.seq_cols]
-        
+
         data = []
-        
+
         for row_index in range(len(sequences[0])):
             row_list = []
-            
+
             for col_index in range(len(sequences)):
                 row_list.append(sequences[col_index][row_index])
-            
+
             row_tensor = np.vstack(row_list)
-            
+
             data.append(row_tensor)
-            
+
         seqs = {self.tensor_key: data}
-        
+
         return non_seqs | seqs
 
     def _getitem_slice(self, idx: slice) -> dict[str, BatchedData]:
         non_seqs = self.dataset[idx]
         pa_subtable = query_table(self.dataset.data, idx, indices=self.dataset._indices)
         sequences = [self._pa_column_to_numpy(pa_subtable, col) for col in self.seq_cols]
-        
+
         data = []
-        
+
         for row_index in range(len(sequences[0])):
             row_list = []
-            
+
             for col_index in range(len(sequences)):
                 row_list.append(sequences[col_index][row_index])
-            
+
             row_tensor = np.vstack(row_list)
-            
+
             data.append(row_tensor)
-            
+
         seqs = {self.tensor_key: data}
-        
+
         return non_seqs | seqs

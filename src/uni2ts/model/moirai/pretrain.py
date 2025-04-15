@@ -88,6 +88,7 @@ class MoiraiPretrain(L.LightningModule):
         max_dim: int,
         num_training_steps: int,
         num_warmup_steps: int,
+        columns_to_pack_into_target: tuple[str] = tuple(),
         module_kwargs: Optional[dict[str, Any]] = None,
         module: Optional[MoiraiModule] = None,
         num_samples: int = 100,
@@ -365,7 +366,8 @@ class MoiraiPretrain(L.LightningModule):
 
         def default_train_transform():
             return (
-                SampleDimension(
+                PackFields(output_field="target", optional_fields=self.hparams.columns_to_pack_into_target, feat=False)
+                + SampleDimension(
                     max_dim=self.hparams.max_dim,
                     fields=("target",),
                     optional_fields=("past_feat_dynamic_real",),
