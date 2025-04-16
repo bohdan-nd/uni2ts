@@ -9,7 +9,7 @@ from ._mixin import MapFuncMixin
 
 
 @dataclass
-class MagnitudeNormalizer(Transformation):
+class MagAndMagErrorNormalizer(Transformation):
     mag_field: str = "mag"
     magerror_field: str = "magerr"
     band_field: str = "bands"
