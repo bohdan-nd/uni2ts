@@ -14,7 +14,7 @@ module_kwargs:
   max_seq_len: 512
   attn_dropout_p: 0.0
   dropout_p: 0.0
-  scaling: true
+  scaling: false
 min_patches: 2
 min_mask_ratio: 0.15
 max_mask_ratio: 0.5
