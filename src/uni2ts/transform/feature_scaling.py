@@ -1,9 +1,41 @@
 from dataclasses import dataclass
 from typing import Any
 from uni2ts.common.typing import UnivarTimeSeries
+import numpy as np
+from scipy import stats
 
 from ._base import Transformation
 from ._mixin import MapFuncMixin
+
+
+@dataclass
+class MagnitudeNormalizer(Transformation):
+    mag_field: str = "mag"
+    magerror_field: str = "magerr"
+    band_field: str = "bands"
+
+    def __call__(self, data_entry):
+        mag_arr: list[UnivarTimeSeries] = data_entry[self.mag_field]
+        magerror_arr: list[UnivarTimeSeries] = data_entry[self.magerror_field]
+        bands_arr: list[UnivarTimeSeries] = data_entry[self.band_field]
+
+        for index in range(len(mag_arr)):
+            mag = mag_arr[index]
+            magerror = magerror_arr[index]
+            bands = bands_arr[index]
+
+            for unuqie_band in np.unique(bands):
+                band_mask = bands == unuqie_band
+                band_mag_mean = mag[band_mask].mean()
+                band_mag_mad = stats.median_abs_deviation(mag[band_mask])
+
+                mag[band_mask] = (mag[band_mask] - band_mag_mean) / band_mag_mad
+                magerror[band_mask] = magerror[band_mask] / band_mag_mad
+
+        data_entry[self.mag_field] = mag_arr
+        data_entry[self.magerror_field] = magerror_arr
+
+        return data_entry
 
 
 @dataclass

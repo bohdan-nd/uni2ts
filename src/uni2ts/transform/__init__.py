@@ -35,7 +35,7 @@ from .reshape import (
     SequencifyField,
     Transpose,
 )
-from .scaling import MinMaxScaler
+from .feature_scaling import MinMaxScaler
 from .task import EvalMaskedPrediction, ExtendMask, MaskedPrediction
 
 __all__ = [
