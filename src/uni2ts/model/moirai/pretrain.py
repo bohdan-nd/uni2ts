@@ -57,6 +57,7 @@ from uni2ts.transform import (
     SelectFields,
     SequencifyField,
     Transformation,
+    MinMaxScaler,
 )
 
 from .module import MoiraiModule
@@ -88,7 +89,8 @@ class MoiraiPretrain(L.LightningModule):
         max_dim: int,
         num_training_steps: int,
         num_warmup_steps: int,
-        columns_to_pack_into_target: tuple[str] = tuple(),
+        field_to_normalize: tuple[str] = tuple(),
+        fields_to_pack_into_target: tuple[str] = tuple(),
         module_kwargs: Optional[dict[str, Any]] = None,
         module: Optional[MoiraiModule] = None,
         num_samples: int = 100,
@@ -366,7 +368,8 @@ class MoiraiPretrain(L.LightningModule):
 
         def default_train_transform():
             return (
-                PackFields(output_field="target", optional_fields=self.hparams.columns_to_pack_into_target, feat=False)
+                MinMaxScaler(fields=self.hparams.field_to_normalize)
+                + PackFields(output_field="target", fields=self.hparams.fields_to_pack_into_target, feat=False)
                 + SampleDimension(
                     max_dim=self.hparams.max_dim,
                     fields=("target",),
