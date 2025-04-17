@@ -437,7 +437,10 @@ class MoiraiFinetune(L.LightningModule):
             patch_size: int,
         ):
             return (
-                GetPatchSize(
+                MagAndMagErrorNormalizer(mag_field="mag", magerror_field="magerr", band_field= "bands")
+                + MinMaxScaler(fields=self.hparams.field_to_normalize)
+                + PackFields(output_field="target", fields=self.hparams.fields_to_pack_into_target, feat=False)
+                + GetPatchSize(
                     min_time_patches=2,
                     target_field="target",
                     patch_sizes=self.module.patch_sizes,
