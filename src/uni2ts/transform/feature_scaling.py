@@ -20,17 +20,20 @@ class MagAndMagErrorNormalizer(Transformation):
         bands_arr: list[UnivarTimeSeries] = data_entry[self.band_field]
 
         for index in range(len(mag_arr)):
-            mag = mag_arr[index]
-            magerror = magerror_arr[index]
+            mag = mag_arr[index].copy()
+            magerror = magerror_arr[index].copy()
             bands = bands_arr[index]
 
-            for unuqie_band in np.unique(bands):
-                band_mask = bands == unuqie_band
+            for unique_band in np.unique(bands):
+                band_mask = bands == unique_band
                 band_mag_mean = mag[band_mask].mean()
                 band_mag_mad = stats.median_abs_deviation(mag[band_mask])
 
                 mag[band_mask] = (mag[band_mask] - band_mag_mean) / band_mag_mad
                 magerror[band_mask] = magerror[band_mask] / band_mag_mad
+                
+            mag_arr[index] = mag
+            magerror_arr[index] = magerror
 
         data_entry[self.mag_field] = mag_arr
         data_entry[self.magerror_field] = magerror_arr

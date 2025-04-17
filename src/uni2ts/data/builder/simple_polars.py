@@ -198,7 +198,7 @@ class SimplePolarsDatasetBuilder(DatasetBuilder):
 
 
 @dataclass
-class SimpleEvalDatasetBuilder(DatasetBuilder):
+class SimplePolarsEvalDatasetBuilder(DatasetBuilder):
     dataset: str
     offset: Optional[int]
     windows: Optional[int]
@@ -241,7 +241,7 @@ def build_datasets(args):
     dataset_builder = SimplePolarsDatasetBuilder(dataset=args.dataset_name)
     dataset_builder.build_dataset(args.folder_path, offset=0.0, end=args.split_ratio, freq=args.freq)
 
-    eval_dataset_builder = SimpleEvalDatasetBuilder(
+    eval_dataset_builder = SimplePolarsEvalDatasetBuilder(
         dataset=f"{args.dataset_name}_eval",
         offset=None,
         windows=None,
