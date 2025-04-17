@@ -18,10 +18,13 @@ trainer:
   devices: auto
   num_nodes: 1
   precision: 32
-  # logger:
-  #     _target_: lightning.pytorch.loggers.WandbLogger
-  #     project: "photofm_tuning"
-  #     save_dir: ${hydra:runtime.output_dir}
+  limit_val_batches: 40
+  check_val_every_n_epoch: 5
+  num_sanity_val_steps: 40
+  logger:
+      _target_: lightning.pytorch.loggers.WandbLogger
+      project: "photofm_tuning"
+      save_dir: ${hydra:runtime.output_dir}
   callbacks:
     - _target_: lightning.pytorch.callbacks.LearningRateMonitor
       logging_interval: epoch
@@ -31,7 +34,7 @@ trainer:
       save_weights_only: true
       mode: min
       save_top_k: 1
-      every_n_epochs: 1
+      every_n_epochs: 10
     - _target_: lightning.pytorch.callbacks.EarlyStopping
       monitor: val/PackedNLLLoss
       min_delta: 0.0
