@@ -18,9 +18,10 @@ trainer:
   devices: auto
   num_nodes: 1
   precision: 32
-  logger:
-      _target_: lightning.pytorch.loggers.WandbLogger
-      save_dir: ${hydra:runtime.output_dir}
+  # logger:
+  #     _target_: lightning.pytorch.loggers.WandbLogger
+  #     project: "photofm_tuning"
+  #     save_dir: ${hydra:runtime.output_dir}
   callbacks:
     - _target_: lightning.pytorch.callbacks.LearningRateMonitor
       logging_interval: epoch
@@ -57,7 +58,7 @@ train_dataloader:
     seq_fields: ${cls_getattr:${model._target_},seq_fields}
     pad_func_map: ${cls_getattr:${model._target_},pad_func_map}
   pin_memory: true
-  drop_last: false
+  drop_last: true
   fill_last: false
   worker_init_fn: null
   prefetch_factor: 2
