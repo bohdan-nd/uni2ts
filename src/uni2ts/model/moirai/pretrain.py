@@ -58,6 +58,7 @@ from uni2ts.transform import (
     SequencifyField,
     Transformation,
     MinMaxScaler,
+    MagAndMagErrorNormalizer
 )
 
 from .module import MoiraiModule
@@ -368,7 +369,8 @@ class MoiraiPretrain(L.LightningModule):
 
         def default_train_transform():
             return (
-                MinMaxScaler(fields=self.hparams.field_to_normalize)
+                MagAndMagErrorNormalizer(mag_field="mag", magerror_field="magerr", band_field= "band_field")
+                + MinMaxScaler(fields=self.hparams.field_to_normalize)
                 + PackFields(output_field="target", fields=self.hparams.fields_to_pack_into_target, feat=False)
                 + SampleDimension(
                     max_dim=self.hparams.max_dim,

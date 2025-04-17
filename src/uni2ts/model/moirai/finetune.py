@@ -61,6 +61,8 @@ from uni2ts.transform import (
     SelectFields,
     SequencifyField,
     Transformation,
+    MinMaxScaler,
+    MagAndMagErrorNormalizer
 )
 
 from .module import MoiraiModule
@@ -92,6 +94,8 @@ class MoiraiFinetune(L.LightningModule):
         max_dim: int,
         num_training_steps: int,
         num_warmup_steps: int,
+        field_to_normalize: tuple[str] = tuple(),
+        fields_to_pack_into_target: tuple[str] = tuple(),
         module_kwargs: Optional[dict[str, Any]] = None,
         module: Optional[MoiraiModule] = None,
         num_samples: int = 100,
@@ -233,6 +237,7 @@ class MoiraiFinetune(L.LightningModule):
         return val_loss
 
     def configure_optimizers(self) -> dict:
+        print("In the Optimizer configuration")
         decay = set()
         no_decay = set()
 
@@ -301,6 +306,8 @@ class MoiraiFinetune(L.LightningModule):
             num_warmup_steps=self.hparams.num_warmup_steps,
             num_training_steps=self.hparams.num_training_steps,
         )
+        
+        print("Configured Optimizers")
         return {
             "optimizer": optimizer,
             "lr_scheduler": {
@@ -316,7 +323,10 @@ class MoiraiFinetune(L.LightningModule):
     ) -> dict[str | type, Callable[..., Transformation]]:
         def default_train_transform():
             return (
-                GetPatchSize(
+                 MagAndMagErrorNormalizer(mag_field="mag", magerror_field="magerr", band_field= "bands")
+                + MinMaxScaler(fields=self.hparams.field_to_normalize)
+                + PackFields(output_field="target", fields=self.hparams.fields_to_pack_into_target, feat=False)
+                + GetPatchSize(
                     min_time_patches=self.hparams.min_patches,
                     target_field="target",
                     patch_sizes=self.module.patch_sizes,
