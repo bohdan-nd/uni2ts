@@ -1,20 +1,16 @@
 - _target_: uni2ts.data.builder.simple_polars.SimplePolarsEvalDatasetBuilder
   dataset: ztf_eval
-  timestemp_column: ""
-  columns: [""]
-  offset: 0
-  windows: 1
-  distance: 96
-  prediction_length: 96
-  context_length: 1000
+  offset: 50 # should be >= context_length
+  windows: 40
+  distance: 5
+  prediction_length: 5
+  context_length: 50
   patch_size: 32
 - _target_: uni2ts.data.builder.simple_polars.SimplePolarsEvalDatasetBuilder
   dataset: ztf_eval
-  timestemp_column: ""
-  columns: [""]
-  offset: 0
-  windows: 10
-  distance: 192
-  prediction_length: 192
-  context_length: 1000
+  offset: 100 # should be >= context_length
+  windows: 40
+  distance: 10
+  prediction_length: 10
+  context_length: 100
   patch_size: 32
