@@ -71,6 +71,8 @@ from .module import MoiraiModule
 class MoiraiFinetune(L.LightningModule):
     seq_fields: tuple[str, ...] = (
         "target",
+        "mjd",
+        "bands", 
         "observed_mask",
         "time_id",
         "variate_id",
@@ -338,12 +340,20 @@ class MoiraiFinetune(L.LightningModule):
                     max_patches=self.module.max_seq_len,
                     will_flatten=True,
                     offset=True,
-                    fields=("target",),
+                    fields=("target", "mjd", "bands"),
                     optional_fields=("past_feat_dynamic_real",),
                 )
                 + PackFields(
                     output_field="target",
                     fields=("target",),
+                )
+                + PackFields(
+                    output_field="mjd",
+                    fields=("mjd",),
+                )
+                + PackFields(
+                    output_field="bands",
+                    fields=("bands",),
                 )
                 + PackFields(
                     output_field="past_feat_dynamic_real",
@@ -357,13 +367,13 @@ class MoiraiFinetune(L.LightningModule):
                     collection_type=dict,
                 )
                 + ImputeTimeSeries(
-                    fields=("target",),
+                    fields=("target", "mjd", "bands"),
                     optional_fields=("past_feat_dynamic_real",),
                     imputation_method=DummyValueImputation(value=0.0),
                 )
                 + Patchify(
                     max_patch_size=max(self.module.patch_sizes),
-                    fields=("target", "observed_mask"),
+                    fields=("target", "observed_mask", "mjd", "bands"),
                     optional_fields=("past_feat_dynamic_real",),
                 )
                 + AddVariateIndex(
@@ -452,12 +462,20 @@ class MoiraiFinetune(L.LightningModule):
                     distance,
                     prediction_length,
                     context_length,
-                    fields=("target",),
+                    fields=("target", "mjd", "bands"),
                     optional_fields=("past_feat_dynamic_real",),
                 )
                 + PackFields(
                     output_field="target",
                     fields=("target",),
+                )
+                + PackFields(
+                    output_field="mjd",
+                    fields=("mjd",),
+                )
+                + PackFields(
+                    output_field="bands",
+                    fields=("bands",),
                 )
                 + PackFields(
                     output_field="past_feat_dynamic_real",
@@ -467,7 +485,7 @@ class MoiraiFinetune(L.LightningModule):
                 + EvalPad(
                     prediction_pad=-prediction_length % patch_size,
                     context_pad=-context_length % patch_size,
-                    fields=("target",),
+                    fields=("target", "mjd", "bands"),
                     optional_fields=("past_feat_dynamic_real",),
                 )
                 + AddObservedMask(
@@ -477,13 +495,13 @@ class MoiraiFinetune(L.LightningModule):
                     collection_type=dict,
                 )
                 + ImputeTimeSeries(
-                    fields=("target",),
+                    fields=("target", "mjd", "bands"),
                     optional_fields=("past_feat_dynamic_real",),
                     imputation_method=DummyValueImputation(value=0.0),
                 )
                 + Patchify(
                     max_patch_size=max(self.module.patch_sizes),
-                    fields=("target", "observed_mask"),
+                    fields=("target", "observed_mask", "mjd", "bands"),
                     optional_fields=("past_feat_dynamic_real",),
                 )
                 + AddVariateIndex(

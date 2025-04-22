@@ -103,6 +103,16 @@ class MoiraiModule(
             in_features_ls=patch_sizes,
             out_features=d_model,
         )
+        self.mjd_proj = MultiInSizeLinear(
+            in_features_ls=patch_sizes,
+            out_features=d_model
+        )
+        
+        self.bands_proj = MultiInSizeLinear(
+            in_features_ls=patch_sizes,
+            out_features=d_model
+        )
+        
         self.encoder = TransformerEncoder(
             d_model,
             num_layers,
@@ -131,6 +141,8 @@ class MoiraiModule(
     def forward(
         self,
         target: Float[torch.Tensor, "*batch seq_len max_patch"],
+        mjd: Float[torch.Tensor, "*batch seq_len max_patch"],
+        bands: Int[torch.Tensor, "*batch seq_len max_patch"],
         observed_mask: Bool[torch.Tensor, "*batch seq_len max_patch"],
         sample_id: Int[torch.Tensor, "*batch seq_len"],
         time_id: Int[torch.Tensor, "*batch seq_len"],
@@ -166,6 +178,9 @@ class MoiraiModule(
         )
         scaled_target = (target - loc) / scale
         reprs = self.in_proj(scaled_target, patch_size)
+        reprs += self.mjd_proj(mjd, patch_size)
+        reprs += self.bands_proj(bands, patch_size)
+        
         masked_reprs = mask_fill(reprs, prediction_mask, self.mask_encoding.weight)
         reprs = self.encoder(
             masked_reprs,
