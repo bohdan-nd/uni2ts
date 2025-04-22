@@ -122,6 +122,8 @@ class MoiraiFinetune(L.LightningModule):
     def forward(
         self,
         target: Float[torch.Tensor, "*batch seq_len max_patch"],
+        mjd: Float[torch.Tensor, "*batch seq_len max_patch"],
+        bands: Int[torch.Tensor, "*batch seq_len max_patch"],
         observed_mask: Bool[torch.Tensor, "*batch seq_len max_patch"],
         sample_id: Int[torch.Tensor, "*batch seq_len"],
         time_id: Int[torch.Tensor, "*batch seq_len"],
@@ -131,6 +133,8 @@ class MoiraiFinetune(L.LightningModule):
     ) -> Distribution:
         distr = self.module(
             target=target,
+            mjd = mjd,
+            bands = bands,
             observed_mask=observed_mask,
             sample_id=sample_id,
             time_id=time_id,
@@ -328,6 +332,10 @@ class MoiraiFinetune(L.LightningModule):
                  MagAndMagErrorNormalizer(mag_field="mag", magerror_field="magerr", band_field= "bands")
                 + MinMaxScaler(fields=self.hparams.field_to_normalize)
                 + PackFields(output_field="target", fields=self.hparams.fields_to_pack_into_target, feat=False)
+                + PackFields(output_field="mjd", fields = ("mjd", ))
+                +SequencifyField(field = "mjd", target_field="target")
+                + PackFields(output_field="bands", fields = ("bands", ))
+                +SequencifyField(field = "bands", target_field="target")
                 + GetPatchSize(
                     min_time_patches=self.hparams.min_patches,
                     target_field="target",
@@ -421,6 +429,15 @@ class MoiraiFinetune(L.LightningModule):
                 )
                 + FlatPackCollection(
                     field="observed_mask",
+                    feat=True,
+                )
+                + FlatPackCollection(
+                    field="mjd",
+                    feat=True,
+                )
+                + FlatPackFields(
+                    output_field="bands",
+                    fields=("bands", ),
                     feat=True,
                 )
                 + FlatPackFields(
@@ -548,6 +565,14 @@ class MoiraiFinetune(L.LightningModule):
                 )
                 + FlatPackCollection(
                     field="observed_mask",
+                    feat=True,
+                )
+                + FlatPackCollection(
+                    field="mjd",
+                    feat=True,
+                )
+                + FlatPackCollection(
+                    field="bands",
                     feat=True,
                 )
                 + FlatPackFields(
