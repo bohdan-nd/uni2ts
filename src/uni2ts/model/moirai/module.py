@@ -79,6 +79,8 @@ class MoiraiModule(
         attn_dropout_p: float,
         dropout_p: float,
         scaling: bool = True,
+        add_time: bool = False,
+        add_bands: bool = False
     ):
         """
         :param distr_output: distribution output object
@@ -96,6 +98,8 @@ class MoiraiModule(
         self.patch_sizes = patch_sizes
         self.max_seq_len = max_seq_len
         self.scaling = scaling
+        self.add_time = add_time
+        self.add_bands = add_bands
 
         self.mask_encoding = nn.Embedding(num_embeddings=1, embedding_dim=d_model)
         self.scaler = PackedStdScaler() if scaling else PackedNOPScaler()
@@ -178,8 +182,12 @@ class MoiraiModule(
         )
         scaled_target = (target - loc) / scale
         reprs = self.in_proj(scaled_target, patch_size)
-        reprs += self.mjd_proj(mjd, patch_size)
-        reprs += self.bands_proj(bands, patch_size)
+        
+        if self.add_time:
+            reprs += self.mjd_proj(mjd, patch_size)
+            
+        if self.add_bands:
+            reprs += self.bands_proj(bands, patch_size)
         
         masked_reprs = mask_fill(reprs, prediction_mask, self.mask_encoding.weight)
         reprs = self.encoder(
