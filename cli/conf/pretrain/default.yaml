@@ -31,7 +31,7 @@ trainer:
       monitor: epoch
       mode: max
       save_top_k: 1
-      every_n_epochs: 10
+      every_n_epochs: 20
     - _target_: lightning.pytorch.callbacks.ModelCheckpoint
       dirpath: ${hydra:runtime.output_dir}/checkpoints
       monitor: epoch
@@ -45,17 +45,17 @@ trainer:
       monitor: epoch
       mode: max
       save_top_k: 1
-      every_n_epochs: 1
+      every_n_epochs: 20
   # epoch-based training provides averaged metrics
   # cannot use max_steps with epoch-based training - resume from checkpoint on wrong epoch
-  max_epochs: 1_000
+  max_epochs: 1000
   enable_progress_bar: true
   accumulate_grad_batches: 1
   gradient_clip_val: 1.0
   gradient_clip_algorithm: norm
 train_dataloader:
   _target_: uni2ts.data.loader.DataLoader
-  batch_size: 256
+  batch_size: 128
   batch_size_factor: 2.0
   cycle: true
   num_batches_per_epoch: 100

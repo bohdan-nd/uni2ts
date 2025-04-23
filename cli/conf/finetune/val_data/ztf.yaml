@@ -2,15 +2,15 @@
   dataset: ztf_eval
   offset: 50 # should be >= context_length
   windows: 40
-  distance: 5
-  prediction_length: 5
-  context_length: 50
+  distance: 4
+  prediction_length: 4
+  context_length: 32
   patch_size: 32
-- _target_: uni2ts.data.builder.simple_polars.SimplePolarsEvalDatasetBuilder
-  dataset: ztf_eval
-  offset: 100 # should be >= context_length
-  windows: 40
-  distance: 10
-  prediction_length: 10
-  context_length: 100
-  patch_size: 32
+# - _target_: uni2ts.data.builder.simple_polars.SimplePolarsEvalDatasetBuilder
+#   dataset: ztf_eval
+#   offset: 100 # should be >= context_length
+#   windows: 40
+#   distance: 10
+#   prediction_length: 10
+#   context_length: 100
+#   patch_size: 32

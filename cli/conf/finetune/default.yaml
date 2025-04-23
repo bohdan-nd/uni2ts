@@ -19,8 +19,8 @@ trainer:
   num_nodes: 1
   precision: 32
   limit_val_batches: 40
-  check_val_every_n_epoch: 5
-  num_sanity_val_steps: 40
+  check_val_every_n_epoch: 10
+  num_sanity_val_steps: 2
   logger:
       _target_: lightning.pytorch.loggers.WandbLogger
       project: "photofm_tuning"
