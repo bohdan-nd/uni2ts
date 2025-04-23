@@ -58,7 +58,9 @@ from uni2ts.transform import (
     SequencifyField,
     Transformation,
     MinMaxScaler,
-    MagAndMagErrorNormalizer
+    MagAndMagErrorNormalizer,
+    DataTypeConverter,
+    PackUnivarFieldsIntoMultivar
 )
 
 from .module import MoiraiModule
@@ -67,6 +69,8 @@ from .module import MoiraiModule
 class MoiraiPretrain(L.LightningModule):
     seq_fields: tuple[str, ...] = (
         "target",
+        "mjd",
+        "bands",
         "observed_mask",
         "time_id",
         "variate_id",
@@ -116,6 +120,8 @@ class MoiraiPretrain(L.LightningModule):
     def forward(
         self,
         target: Float[torch.Tensor, "*batch seq_len max_patch"],
+        mjd: Float[torch.Tensor, "*batch seq_len max_patch"],
+        bands: Int[torch.Tensor, "*batch seq_len max_patch"],
         observed_mask: Bool[torch.Tensor, "*batch seq_len max_patch"],
         sample_id: Int[torch.Tensor, "*batch seq_len"],
         time_id: Int[torch.Tensor, "*batch seq_len"],
@@ -137,6 +143,8 @@ class MoiraiPretrain(L.LightningModule):
         """
         distr = self.module(
             target=target,
+            mjd = mjd,
+            bands = bands,
             observed_mask=observed_mask,
             sample_id=sample_id,
             time_id=time_id,
@@ -369,9 +377,9 @@ class MoiraiPretrain(L.LightningModule):
 
         def default_train_transform():
             return (
-                MagAndMagErrorNormalizer(mag_field="mag", magerror_field="magerr", band_field= "band_field")
+                MagAndMagErrorNormalizer(mag_field="mag", magerror_field="magerr", band_field= "bands")
                 + MinMaxScaler(fields=self.hparams.field_to_normalize)
-                + PackFields(output_field="target", fields=self.hparams.fields_to_pack_into_target, feat=False)
+                + PackUnivarFieldsIntoMultivar(output_field="target", fields=self.hparams.fields_to_pack_into_target)
                 + SampleDimension(
                     max_dim=self.hparams.max_dim,
                     fields=("target",),
@@ -389,7 +397,7 @@ class MoiraiPretrain(L.LightningModule):
                     max_patches=self.module.max_seq_len,
                     will_flatten=True,
                     offset=True,
-                    fields=("target",),
+                    fields=("target", "mjd", "bands"),
                     optional_fields=("past_feat_dynamic_real",),
                 )
                 + PackFields(
@@ -397,6 +405,11 @@ class MoiraiPretrain(L.LightningModule):
                     fields=("target",),
                     feat=False,
                 )
+                + PackFields(output_field="mjd", fields = ("mjd",))
+                + SequencifyField(field = "mjd", target_field="target")
+                + PackFields(output_field="bands", fields = ("bands",))
+                + DataTypeConverter(field="bands", datatype = np.float32)
+                + SequencifyField(field = "bands", target_field="target")
                 + PackFields(
                     output_field="past_feat_dynamic_real",
                     fields=tuple(),
@@ -410,13 +423,13 @@ class MoiraiPretrain(L.LightningModule):
                     collection_type=dict,
                 )
                 + ImputeTimeSeries(
-                    fields=("target",),
+                    fields=("target", "mjd", "bands"),
                     optional_fields=("past_feat_dynamic_real",),
                     imputation_method=DummyValueImputation(value=0.0),
                 )
                 + Patchify(
                     max_patch_size=max(self.module.patch_sizes),
-                    fields=("target", "observed_mask"),
+                    fields=("target", "observed_mask", "mjd", "bands"),
                     optional_fields=("past_feat_dynamic_real",),
                 )
                 + AddVariateIndex(
@@ -464,6 +477,15 @@ class MoiraiPretrain(L.LightningModule):
                 )
                 + FlatPackCollection(
                     field="observed_mask",
+                    feat=True,
+                )
+                + FlatPackCollection(
+                    field="mjd",
+                    feat=True,
+                )
+                + FlatPackFields(
+                    output_field="bands",
+                    fields=("bands", ),
                     feat=True,
                 )
                 + FlatPackFields(

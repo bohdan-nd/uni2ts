@@ -21,6 +21,10 @@ from einops import pack
 
 from ._base import Transformation
 from ._mixin import CollectFuncMixin, MapFuncMixin
+from uni2ts.common.typing import (
+    MultivarTimeSeries,
+    UnivarTimeSeries,
+)
 
 
 @dataclass
@@ -36,6 +40,30 @@ class SequencifyField(Transformation):
         )
         return data_entry
 
+
+@dataclass
+class PackUnivarFieldsIntoMultivar(CollectFuncMixin, Transformation):
+    output_field: str
+    fields: tuple[str, ...]
+    optional_fields: tuple[str, ...] = tuple()
+    
+    def __call__(self, data_entry: dict[str, Any]) -> dict[str, Any]:
+        fields: list[UnivarTimeSeries] = self.collect_func_list(
+            self.pop_field,
+            data_entry,
+            self.fields,
+            optional_fields=self.optional_fields,
+        )
+        
+        data_entry[self.output_field] = fields
+        
+        return data_entry
+        
+    @staticmethod
+    def pop_field(data_entry: dict[str, Any], field: str) -> Any:
+        field: UnivarTimeSeries =  data_entry.pop(field)[0]
+        
+        return field
 
 @dataclass
 class PackFields(CollectFuncMixin, Transformation):

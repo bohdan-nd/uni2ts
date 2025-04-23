@@ -62,7 +62,9 @@ from uni2ts.transform import (
     SequencifyField,
     Transformation,
     MinMaxScaler,
-    MagAndMagErrorNormalizer
+    MagAndMagErrorNormalizer,
+    DataTypeConverter,
+    PackUnivarFieldsIntoMultivar
 )
 
 from .module import MoiraiModule
@@ -331,11 +333,7 @@ class MoiraiFinetune(L.LightningModule):
             return (
                  MagAndMagErrorNormalizer(mag_field="mag", magerror_field="magerr", band_field= "bands")
                 + MinMaxScaler(fields=self.hparams.field_to_normalize)
-                + PackFields(output_field="target", fields=self.hparams.fields_to_pack_into_target, feat=False)
-                + PackFields(output_field="mjd", fields = ("mjd", ))
-                +SequencifyField(field = "mjd", target_field="target")
-                + PackFields(output_field="bands", fields = ("bands", ))
-                +SequencifyField(field = "bands", target_field="target")
+                + PackUnivarFieldsIntoMultivar(output_field="target", fields=self.hparams.fields_to_pack_into_target)
                 + GetPatchSize(
                     min_time_patches=self.hparams.min_patches,
                     target_field="target",
@@ -355,6 +353,11 @@ class MoiraiFinetune(L.LightningModule):
                     output_field="target",
                     fields=("target",),
                 )
+                + PackFields(output_field="mjd", fields = ("mjd", ))
+                + SequencifyField(field = "mjd", target_field="target")
+                + PackFields(output_field="bands", fields = ("bands", ))
+                + DataTypeConverter(field="bands", datatype = np.float32)
+                + SequencifyField(field = "bands", target_field="target")
                 + PackFields(
                     output_field="mjd",
                     fields=("mjd",),
@@ -466,7 +469,7 @@ class MoiraiFinetune(L.LightningModule):
             return (
                 MagAndMagErrorNormalizer(mag_field="mag", magerror_field="magerr", band_field= "bands")
                 + MinMaxScaler(fields=self.hparams.field_to_normalize)
-                + PackFields(output_field="target", fields=self.hparams.fields_to_pack_into_target, feat=False)
+                + PackUnivarFieldsIntoMultivar(output_field="target", fields=self.hparams.fields_to_pack_into_target)
                 + GetPatchSize(
                     min_time_patches=2,
                     target_field="target",
@@ -486,6 +489,11 @@ class MoiraiFinetune(L.LightningModule):
                     output_field="target",
                     fields=("target",),
                 )
+                + PackFields(output_field="mjd", fields = ("mjd", ))
+                + SequencifyField(field = "mjd", target_field="target")
+                + PackFields(output_field="bands", fields = ("bands", ))
+                + DataTypeConverter(field="bands", datatype = np.float32)
+                +SequencifyField(field = "bands", target_field="target")
                 + PackFields(
                     output_field="mjd",
                     fields=("mjd",),
