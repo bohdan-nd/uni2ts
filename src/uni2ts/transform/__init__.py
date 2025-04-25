@@ -34,9 +34,9 @@ from .reshape import (
     PackFields,
     SequencifyField,
     Transpose,
-    PackUnivarFieldsIntoMultivar
+    PackUnivarFieldsIntoMultivar,
 )
-from .feature_scaling import MinMaxScaler, MagAndMagErrorNormalizer
+from .bands import MinMaxScaler, MagAndMagErrorNormalizer
 from .convert import DataTypeConverter
 from .task import EvalMaskedPrediction, ExtendMask, MaskedPrediction
 
@@ -77,5 +77,5 @@ __all__ = [
     "MinMaxScaler",
     "MagAndMagErrorNormalizer",
     "DataTypeConverter",
-    "PackUnivarFieldsIntoMultivar"
+    "PackUnivarFieldsIntoMultivar",
 ]
