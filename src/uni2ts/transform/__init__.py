@@ -36,7 +36,7 @@ from .reshape import (
     Transpose,
     PackUnivarFieldsIntoMultivar,
 )
-from .bands import MinMaxScaler, MagAndMagErrorNormalizer
+from .bands import MinMaxScaler, MagAndMagErrorNormalizer, FilterBands, BandRemapper
 from .convert import DataTypeConverter
 from .task import EvalMaskedPrediction, ExtendMask, MaskedPrediction
 

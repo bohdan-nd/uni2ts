@@ -60,7 +60,9 @@ from uni2ts.transform import (
     MinMaxScaler,
     MagAndMagErrorNormalizer,
     DataTypeConverter,
-    PackUnivarFieldsIntoMultivar
+    PackUnivarFieldsIntoMultivar,
+    BandRemapper,
+    FilterBands
 )
 
 from .module import MoiraiModule
@@ -377,7 +379,9 @@ class MoiraiPretrain(L.LightningModule):
 
         def default_train_transform():
             return (
-                MagAndMagErrorNormalizer(mag_field="mag", magerror_field="magerr", band_field= "bands")
+                FilterBands(fields = ("mjd", "mag", "magerr", "bands"), bands_field = "bands", index_key = "index")
+                + BandRemapper(bands_field = "bands")
+                + MagAndMagErrorNormalizer(mag_field="mag", magerror_field="magerr", band_field= "bands")
                 + MinMaxScaler(fields=self.hparams.field_to_normalize)
                 + PackUnivarFieldsIntoMultivar(output_field="target", fields=self.hparams.fields_to_pack_into_target)
                 + SampleDimension(
