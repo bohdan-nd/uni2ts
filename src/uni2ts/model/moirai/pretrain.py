@@ -145,8 +145,8 @@ class MoiraiPretrain(L.LightningModule):
         """
         distr = self.module(
             target=target,
-            mjd = mjd,
-            bands = bands,
+            mjd=mjd,
+            bands=bands,
             observed_mask=observed_mask,
             sample_id=sample_id,
             time_id=time_id,
@@ -409,11 +409,11 @@ class MoiraiPretrain(L.LightningModule):
                     fields=("target",),
                     feat=False,
                 )
-                + PackFields(output_field="mjd", fields = ("mjd",))
-                + SequencifyField(field = "mjd", target_field="target")
-                + PackFields(output_field="bands", fields = ("bands",))
-                + DataTypeConverter(field="bands", datatype = np.float32)
-                + SequencifyField(field = "bands", target_field="target")
+                + PackFields(output_field="mjd", fields=("mjd",))
+                + SequencifyField(field="mjd", target_field="target")
+                + PackFields(output_field="bands", fields=("bands",))
+                + DataTypeConverter(field="bands", datatype=np.float32)
+                + SequencifyField(field="bands", target_field="target")
                 + PackFields(
                     output_field="past_feat_dynamic_real",
                     fields=tuple(),
@@ -489,7 +489,7 @@ class MoiraiPretrain(L.LightningModule):
                 )
                 + FlatPackFields(
                     output_field="bands",
-                    fields=("bands", ),
+                    fields=("bands",),
                     feat=True,
                 )
                 + FlatPackFields(

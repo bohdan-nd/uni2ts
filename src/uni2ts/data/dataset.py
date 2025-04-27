@@ -86,7 +86,10 @@ class TimeSeriesDataset(Dataset):
         if self.sample_time_series != SampleTimeSeriesType.NONE:
             idx = np.random.choice(len(self.probabilities), p=self.probabilities)
 
-        return self.transform(self._flatten_data(self._get_data(idx)))
+        data = self._flatten_data(self._get_data(idx))
+        data["index"] = idx
+
+        return self.transform(data)
 
     @property
     def num_ts(self) -> int:

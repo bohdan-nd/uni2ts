@@ -15,6 +15,8 @@ module_kwargs:
   attn_dropout_p: 0.0
   dropout_p: 0.0
   scaling: false
+  add_time: true
+  add_bands: true
 min_patches: 2
 min_mask_ratio: 0.15
 max_mask_ratio: 0.5
@@ -28,4 +30,4 @@ weight_decay: 1e-1
 beta1: 0.9
 beta2: 0.98
 num_training_steps: ${mul:${trainer.max_epochs},${train_dataloader.num_batches_per_epoch}}
-num_warmup_steps: 1000
+num_warmup_steps: 10000

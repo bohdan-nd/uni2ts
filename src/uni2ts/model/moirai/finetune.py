@@ -64,7 +64,7 @@ from uni2ts.transform import (
     MinMaxScaler,
     MagAndMagErrorNormalizer,
     DataTypeConverter,
-    PackUnivarFieldsIntoMultivar
+    PackUnivarFieldsIntoMultivar,
 )
 
 from .module import MoiraiModule
@@ -74,7 +74,7 @@ class MoiraiFinetune(L.LightningModule):
     seq_fields: tuple[str, ...] = (
         "target",
         "mjd",
-        "bands", 
+        "bands",
         "observed_mask",
         "time_id",
         "variate_id",
@@ -135,8 +135,8 @@ class MoiraiFinetune(L.LightningModule):
     ) -> Distribution:
         distr = self.module(
             target=target,
-            mjd = mjd,
-            bands = bands,
+            mjd=mjd,
+            bands=bands,
             observed_mask=observed_mask,
             sample_id=sample_id,
             time_id=time_id,
@@ -314,7 +314,7 @@ class MoiraiFinetune(L.LightningModule):
             num_warmup_steps=self.hparams.num_warmup_steps,
             num_training_steps=self.hparams.num_training_steps,
         )
-        
+
         print("Configured Optimizers")
         return {
             "optimizer": optimizer,
@@ -331,7 +331,7 @@ class MoiraiFinetune(L.LightningModule):
     ) -> dict[str | type, Callable[..., Transformation]]:
         def default_train_transform():
             return (
-                 MagAndMagErrorNormalizer(mag_field="mag", magerror_field="magerr", band_field= "bands")
+                MagAndMagErrorNormalizer(mag_field="mag", magerror_field="magerr", band_field="bands")
                 + MinMaxScaler(fields=self.hparams.field_to_normalize)
                 + PackUnivarFieldsIntoMultivar(output_field="target", fields=self.hparams.fields_to_pack_into_target)
                 + GetPatchSize(
@@ -353,11 +353,11 @@ class MoiraiFinetune(L.LightningModule):
                     output_field="target",
                     fields=("target",),
                 )
-                + PackFields(output_field="mjd", fields = ("mjd", ))
-                + SequencifyField(field = "mjd", target_field="target")
-                + PackFields(output_field="bands", fields = ("bands", ))
-                + DataTypeConverter(field="bands", datatype = np.float32)
-                + SequencifyField(field = "bands", target_field="target")
+                + PackFields(output_field="mjd", fields=("mjd",))
+                + SequencifyField(field="mjd", target_field="target")
+                + PackFields(output_field="bands", fields=("bands",))
+                + DataTypeConverter(field="bands", datatype=np.float32)
+                + SequencifyField(field="bands", target_field="target")
                 + PackFields(
                     output_field="mjd",
                     fields=("mjd",),
@@ -440,7 +440,7 @@ class MoiraiFinetune(L.LightningModule):
                 )
                 + FlatPackFields(
                     output_field="bands",
-                    fields=("bands", ),
+                    fields=("bands",),
                     feat=True,
                 )
                 + FlatPackFields(
@@ -467,7 +467,7 @@ class MoiraiFinetune(L.LightningModule):
             patch_size: int,
         ):
             return (
-                MagAndMagErrorNormalizer(mag_field="mag", magerror_field="magerr", band_field= "bands")
+                MagAndMagErrorNormalizer(mag_field="mag", magerror_field="magerr", band_field="bands")
                 + MinMaxScaler(fields=self.hparams.field_to_normalize)
                 + PackUnivarFieldsIntoMultivar(output_field="target", fields=self.hparams.fields_to_pack_into_target)
                 + GetPatchSize(
@@ -489,11 +489,11 @@ class MoiraiFinetune(L.LightningModule):
                     output_field="target",
                     fields=("target",),
                 )
-                + PackFields(output_field="mjd", fields = ("mjd", ))
-                + SequencifyField(field = "mjd", target_field="target")
-                + PackFields(output_field="bands", fields = ("bands", ))
-                + DataTypeConverter(field="bands", datatype = np.float32)
-                +SequencifyField(field = "bands", target_field="target")
+                + PackFields(output_field="mjd", fields=("mjd",))
+                + SequencifyField(field="mjd", target_field="target")
+                + PackFields(output_field="bands", fields=("bands",))
+                + DataTypeConverter(field="bands", datatype=np.float32)
+                + SequencifyField(field="bands", target_field="target")
                 + PackFields(
                     output_field="mjd",
                     fields=("mjd",),

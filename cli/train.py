@@ -119,6 +119,7 @@ def main(cfg: DictConfig):
 
     if cfg.compile:
         model.module.compile(mode=cfg.compile)
+
     trainer: L.Trainer = instantiate(cfg.trainer)
     train_dataset: Dataset = instantiate(cfg.data).load_dataset(model.train_transform_map)
     val_dataset: Optional[Dataset | list[Dataset]] = (

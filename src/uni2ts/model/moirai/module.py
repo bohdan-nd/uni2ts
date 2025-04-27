@@ -80,7 +80,7 @@ class MoiraiModule(
         dropout_p: float,
         scaling: bool = True,
         add_time: bool = False,
-        add_bands: bool = False
+        add_bands: bool = False,
     ):
         """
         :param distr_output: distribution output object
@@ -107,16 +107,10 @@ class MoiraiModule(
             in_features_ls=patch_sizes,
             out_features=d_model,
         )
-        self.mjd_proj = MultiInSizeLinear(
-            in_features_ls=patch_sizes,
-            out_features=d_model
-        )
-        
-        self.bands_proj = MultiInSizeLinear(
-            in_features_ls=patch_sizes,
-            out_features=d_model
-        )
-        
+        self.mjd_proj = MultiInSizeLinear(in_features_ls=patch_sizes, out_features=d_model)
+
+        self.bands_proj = MultiInSizeLinear(in_features_ls=patch_sizes, out_features=d_model)
+
         self.encoder = TransformerEncoder(
             d_model,
             num_layers,
@@ -182,13 +176,13 @@ class MoiraiModule(
         )
         scaled_target = (target - loc) / scale
         reprs = self.in_proj(scaled_target, patch_size)
-        
+
         if self.add_time:
             reprs += self.mjd_proj(mjd, patch_size)
-            
+
         if self.add_bands:
             reprs += self.bands_proj(bands, patch_size)
-        
+
         masked_reprs = mask_fill(reprs, prediction_mask, self.mask_encoding.weight)
         reprs = self.encoder(
             masked_reprs,
